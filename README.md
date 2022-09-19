@@ -1,5 +1,5 @@
 # ElectroHat
-Third version of tin-foil hat
+Mark3 Tin-Foil Hat
 
 **WIP**
 
