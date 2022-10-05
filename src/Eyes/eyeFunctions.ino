@@ -111,7 +111,7 @@ void drawEye( // Renders one eye.  Inputs must be pre-clipped & valid.
   // reset on each frame here in case of an SPI glitch.
   digitalWrite(eye[e].tft_cs, LOW);
   tft.startWrite();
-  tft.setAddrWindow(eye[e].xposition, 0, EYE_WIDTH, EYE_HEIGHT);
+  tft.setAddrWindow(eye[e].xposition, Y_POSITION, EYE_WIDTH, EYE_HEIGHT);
 
   // Now just issue raw 16-bit values for every pixel...
   scleraXsave = scleraX; // Save initial X value to reset on each line
@@ -135,6 +135,7 @@ void drawEye( // Renders one eye.  Inputs must be pre-clipped & valid.
       } else {                                          // Maybe iris...
         p = pgm_read_word(polar + irisY * IRIS_WIDTH + irisX);                        // Polar angle/dist
         d = (iScale * (p & 0x7F)) / 128;                // Distance (Y)
+
         if (d < IRIS_MAP_HEIGHT) {                      // Within iris area
           a = (IRIS_MAP_WIDTH * (p >> 7)) / 512;        // Angle (X)
           p = pgm_read_word(iris + d * IRIS_MAP_WIDTH + a);                           // Pixel = iris
