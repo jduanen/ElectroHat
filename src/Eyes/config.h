@@ -45,7 +45,7 @@ eyeInfo_t eyeInfo[] = {
 #endif
 };
 
-//#define TRACKING            // If defined, eyelid tracks pupil
+#define TRACKING            // If defined, eyelid tracks pupil
 
 #define LIGHT_PIN       A0
 
@@ -58,8 +58,10 @@ eyeInfo_t eyeInfo[] = {
     #define IRIS_MIN    90  // Iris size (0-1023) in brightest light
 #endif
 #if !defined(IRIS_MAX)
-    #define IRIS_MAX    130 // Iris size (0-1023) in darkest light
+    #define IRIS_MAX    256 // Iris size (0-1023) in darkest light
 #endif
 
 #define SCREEN_WIDTH    240
 #define SCREEN_HEIGHT   240
+
+#define Y_POSITION      24
