@@ -63,6 +63,16 @@ The Goggles consist of:
         - uncomment all other includes
         - add this line:
           * #include <User_Setups/Setup300_RP2040_GC9A01_SPI_240x240.h>  // Setup file for XIAO RP2040 and GC9A01 240 x 240 TFT using SPI
+      * change all uses of "SCREEN_WIDTH" and "SCREEN_HEIGHT" to "EYE_WIDTH" and "EYE_HEIGHT"
+    - Uncanny_Eyes application and eye table generation
+      * git clone https://github.com/adafruit/Uncanny_Eyes.git
+      * from convert/ copy defaultEye/, hextable.py, and tablegen.py
+      * copy defaultEye/ to eye/
+      * scale all images by a factor of 1.5
+        - for f in *.png; do echo $f; convert -resize 150% $f $f; done
+      * build eye.h file(s)
+        - python3 tablegen.py eye/sclera.png eye/iris.png eye/lid-upper-symmetrical.png  eye/lid-lower-symmetrical.png eye/lid-upper.png eye/lid-lower.png 120 > eye.h
+        - change all uses of "SCREEN_WIDTH" and "SCREEN_HEIGHT" to "EYE_WIDTH" and "EYE_HEIGHT"
 
   * XIAO RP2040 controller
     - install sdk and tools for RP2040
