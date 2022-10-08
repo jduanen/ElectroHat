@@ -9,7 +9,7 @@
 
 // Enable ONE of these #includes -- HUGE graphics tables for various eyes:
 //#include "data/defaultEye.h"      // Standard human-ish hazel eye -OR-
-#include "data/eye.h"
+#include "eye.h"
 
 // DISPLAY HARDWARE SETTINGS (screen type & connections) -------------------
 #define TFT_COUNT         1  // Number of screens (1 or 2)
