@@ -19,7 +19,13 @@ The Hat consists of:
       * TODO: add models for these bars
   * eight colored EL wires
     - driven by an Alien Font Display driver card (https://github.com/jduanen/alienFontDisplay)
-  * ESP8266 WiFi-connected controller that controls the EL wires and offers the Hat's web interface
+  * ESP32-C3 WiFi-connected controller that controls the EL wires and offers the Hat's web interface
+    - use Arduino2 IDE
+      * add url to board manager
+        - https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_dev_index.json
+      * add ESP32 board package
+      * select XIAO_ESP32C3
+    
   * power supply consisting of
     - LiPo battery
     - battery charger: allows charging of battery (via USB connector) and generates 5V for the ESP controller
@@ -70,6 +76,8 @@ The Goggles consist of:
       * copy defaultEye/ to eye/
       * scale all images by a factor of 1.5
         - for f in *.png; do echo $f; convert -resize 150% $f $f; done
+      * fix tablegen.py
+        - ????
       * build eye.h file(s)
         - python3 tablegen.py eye/sclera.png eye/iris.png eye/lid-upper-symmetrical.png  eye/lid-lower-symmetrical.png eye/lid-upper.png eye/lid-lower.png 120 > eye.h
         - change all uses of "SCREEN_WIDTH" and "SCREEN_HEIGHT" to "EYE_WIDTH" and "EYE_HEIGHT"
