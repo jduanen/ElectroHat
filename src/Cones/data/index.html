@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>%APPL_NAME% Web Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+  <div class="topnav">
+    <h1>%APPL_NAME% Web Server</h1>
+  </div>
+  <div class="content">
+    <div class="card">
+      <h2>Information</h2>
+      <p><span class="staticStateName">App Version: </span><span class="staticStateValue" id="version">%VERSION%</span></p>
+      <p><span class="staticStateName">Library Version: </span><span class="staticStateValue" id="libVersion">%LIB_VERSION%</span></p>
+      <p><span class="staticStateName">WIFI Mode: </span><span class="staticStateValue" id="wifiMode">%WIFI_MODE%</span></p>
+      <p><span class="staticStateName"># EL Wire Sequences: </span><span class="staticStateValue" id="numSequences">%NUMBER_OF_SEQUENCES%</span></p>
+      <p><span class="staticStateName">Sequences Version: </span><span class="staticStateValue" id="sequencesVersion">%SEQUENCES_VERSION%</span></p>
+      <p><span class="stateName">RSSI: </span><span class="stateValue" id="rssi">%RSSI%</span></p>
+    </div>
+    <br>
+    <div class="card">
+      <h2>Controls</h2>
+      <h3>System</h3>
+      <div class="vertical-right" style="padding-right: 50px; line-height: 1.5em;">
+        <p>
+          SSID: <input type="text" id="ssid">
+          <br>
+          Passwd: <input type="password" id="password">
+        </p>
+      </div>
+
+      <h3>EL Wires</h3>
+      <div class ="center">
+        State: &nbsp <span id="elState" style="color:blue"></span>
+        <label class="switch">
+          <input type="checkbox" onclick="toggleCheckbox(this)" id="el">
+            <span class="slider"></span>
+        </label>
+      </div>
+      <div class="vertical-center">
+        Random Sequence: 
+        <input type="checkbox" id="randomSequence" name="randomSequence" onclick="toggleRandomSequence()">
+        <br>
+        Sequence Number:
+        <select id="sequenceNumber" name="sequenceNumber" onchange="setSequence()"></select>
+        <br>
+        Sequence Speed:
+        <input type="range", id="sequenceSpeed", min="1", max="1000", value="333" onchange="setSequence()"> &nbsp <span id="speed"></span>
+      </div>
+
+      <div class="vertical-center">
+        <p><button class="green-button" id="save" onclick="saveConfiguration()">Save Configuration</button></p>
+      </div>
+    </div>
+    <br>
+    <nav>
+      <a href="/update">Update Firmware</a>
+    </nav>
+  </div>
+<script src="/scripts.js"></script>
+<script>
+  function initView() {
+    var jsonMsg = JSON.stringify({"msgType": "query"});
+    websocket.send(jsonMsg);
+    var select = document.getElementById('sequenceNumber');
+    var child = select.lastElementChild;
+    while (child) {
+      select.removeChild(child);
+      child = select.lastElementChild;
+    }
+    for (var i = 0; i < %NUMBER_OF_SEQUENCES%; i++) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.innerHTML = i;
+      select.appendChild(opt);
+    }
+    var wifiMode = "%WIFI_MODE%";
+    switch (wifiMode) {
+      case "STA":
+        var p1 = "<p><span class=\"staticStateName\">IP Address: </span><span class=\"staticStateValue\" id=\"ipAddr\">%IP_ADDR%</span></p>";
+        var p2 = "<p><span class=\"staticStateName\">Connection: </span><span class=\"staticStateValue\" id=\"connection\">%SSID%</span></p>";
+        document.getElementById("wifiMode").insertAdjacentHTML('afterend', p1);
+        document.getElementById("ipAddr").insertAdjacentHTML('afterend', p2);
+        break;
+      case "A_P":
+        var p1 = "<p><span class=\"staticStateName\">AP SSID: </span><span class=\"staticStateValue\" id=\"wifiApSsid\">%WIFI_AP_SSID%</span></p>";
+        document.getElementById("wifiMode").insertAdjacentHTML('afterend', p1);
+        break;
+      default:
+        console.log("WARNING: invalid WIFI mode -- " + wifiMode);
+    }
+  }
+</script>
