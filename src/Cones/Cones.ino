@@ -44,7 +44,7 @@
 
 
 #define APPL_NAME           "ElectroHatCones"
-#define APPL_VERSION        "1.0.0"
+#define APPL_VERSION        "1.0.1"
 
 #define VERBOSE             1
 
