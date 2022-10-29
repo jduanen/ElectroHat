@@ -92,7 +92,7 @@ void NeoPixelRing::_colorFill() {
 // Movie-marquee-like chasing rainbow lights that precess
 void NeoPixelRing::_marquee() {
     _nextRunTime = millis() + _delay;
-    _ring->clear();
+//    _ring->clear();
     int n = _ring->numPixels();
     for (int i = (_loopCnt % 3); (i < n); i += 3) {
         int hue = _firstPixelHue + i * 65536L / n;
