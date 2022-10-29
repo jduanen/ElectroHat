@@ -71,13 +71,21 @@ void NeoPixelRing::clear() {
 
 // Fill pixels sequentially with the selected color, with the selected delay
 //  time (in msec) between each illumination.
-// Doesn't clear the pixels first.
+// Clears the pixels at the start of every cycle.
 void NeoPixelRing::_colorWipe() {
     _nextRunTime = millis() + _delay;
     if (_pixelNum == 0) {
         _ring->clear();
     }
     _ring->setPixelColor(_pixelNum, _color);
+    _ring->show();
+};
+
+// Fill all pixels with the selected color
+// Doesn't clear the pixels first.
+void NeoPixelRing::_colorFill() {
+    _nextRunTime = millis() + _delay;
+    _ring->fill(_color, 0, _ring->numPixels());
     _ring->show();
 };
 

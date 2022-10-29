@@ -56,7 +56,7 @@ public:
 private:
     Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-    static byte const _NUM_PATTERNS = 3;
+    static byte const _NUM_PATTERNS = 4;
 
     byte _pixelNum = 0;
     uint32_t _color = 0x000000;
@@ -68,12 +68,13 @@ private:
 
     void _create(byte brightness);
     void _colorWipe();
+    void _colorFill();
     void _marquee();
     void _rainbow();
 
-//    const PatternFunc _patterns[_NUM_PATTERNS] = {
     const Patterns _patterns[_NUM_PATTERNS] = {
         {PATTERN_FUNC(_colorWipe), "Color Wipe"},
+        {PATTERN_FUNC(_colorFill), "Color Fill"},
         {PATTERN_FUNC(_marquee), "Marquee"},
         {PATTERN_FUNC(_rainbow), "Rainbow"}
     };
