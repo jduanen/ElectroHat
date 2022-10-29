@@ -13,10 +13,14 @@
 #define LED_COUNT           16
 #define DEF_LED_BRIGHTNESS  50  // max = 255
 
+#define COLOR_WIPE  0
+#define MARQUEE     1
+#define RAINBOW     2
 
-uint32_t    loopCnt = 0;
 
-NeoPixelRing ring;
+uint32_t loopCnt = 0;
+
+NeoPixelRing ring = NeoPixelRing();
 
 
 void setup() {
@@ -25,66 +29,62 @@ void setup() {
     delay(500);
     Serial.println("\nBEGIN");
 
-    /*
-    Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
-    for (int i = 0; (i < strip.numPixels()); i++) {
-        strip.setPixelColor(i, strip.Color(255,0,255));
-        strip.show();
-        delay(200);
+    ring.test(NeoPixelRing::ALL_WHITE);
+    delay(500);
+
+    Serial.println("Delay: " + String(ring.getDelay()));
+    ring.setDelay(250);
+    Serial.println("Delay: " + String(ring.getDelay()));
+    Serial.println("# Patterns: " + String(ring.getNumPatterns()));
+    Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
+    ring.selectPattern(1);
+    Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
+    ring.setColor(ring.makeColor(255, 0, 255));
+    Serial.println("Selected Color: 0x" + String(ring.getColor(), HEX));
+    int n = ring.getNumPatterns();
+    Serial.println("Number of Patterns: " + String(n));
+    char *names[n];
+    int numPatterns = ring.getPatternNames(names, n);
+    if (numPatterns < 1) {
+        Serial.println("getPatternNames failed");
+    } else {
+        Serial.print("Pattern Names (" + String(numPatterns) + "): ");
+        for (int i = 0; (i < numPatterns); i++) {
+            if (i > 0) {
+                Serial.print(", ");
+            }
+            Serial.print(names[i]);
+        }
+        Serial.println(".");
     }
-    */
-    Serial.println("*******");
 
-    ring = NeoPixelRing();
-
-    ring.test(LED_TEST_ALL_BLUE);
-    delay(1000);
     Serial.println("\nSTART");
+    ring.clear();
 }
 
+int p = 0;
 void loop() {
-    ring.test(LED_TEST_ALL_WHITE);
-    Serial.println("AAA");
-    delay(1000);
-    ring.test(LED_TEST_ALL_RED);
-    Serial.println("BBB");
-    delay(1000);
-    ring.test(LED_TEST_ALL_OFF);
-    Serial.println("CCC");
-    delay(1000);
-
-    if ((loopCnt & 10000) == 0) {
-        Serial.println("Loop: " + String(loopCnt));
+    if ((loopCnt % 256) == 0) {
+        p = (p + 1) % 3;
+        Serial.println("P: " + String(p) + ", Loop: " + String(loopCnt));
+        ring.clear();
     }
+    ring.selectPattern(p);
+    int d;
+    switch (p) {
+        case COLOR_WIPE:
+            d = 50;
+            break;
+        case MARQUEE:
+            d = 60;
+            break;
+        case RAINBOW:
+            d = 50;
+            break;
+        default:
+            d = 10;
+    }
+    ring.setDelay(d);
+    ring.run();
     loopCnt += 1;
 }
-
-    /*
-    // fill along the length of the strip in R, G, and B
-    println("Color Wipe: R");
-    colorWipe(strip.Color(255,   0,   0), 50);
-    println("Color Wipe: G");
-    colorWipe(strip.Color(  0, 255,   0), 50);
-    println("Color Wipe: B");
-    colorWipe(strip.Color(  0,   0, 255), 50);
-
-    // theater marquee effect in W, R, and B -- all in half brightness
-    println("Theater Marquee: W");
-    theaterChase(strip.Color(127, 127, 127), 50);
-    println("Theater Marquee: R");
-    theaterChase(strip.Color(127,   0,   0), 50);
-    println("Theater Marquee: B");
-    theaterChase(strip.Color(  0,   0, 127), 50);
-
-    // flowing rainbow cycle along the whole strip
-    println("Rainbow");
-    rainbow(10);
-
-    // rainbow cycle along the whole strip
-    println("RainbowCycle");
-    rainbowCycle(10);
-
-    // rainbow-enhanced theaterChase variant
-    println("Theater Chase Rainbow");
-    theaterChaseRainbow(50);
-    */
