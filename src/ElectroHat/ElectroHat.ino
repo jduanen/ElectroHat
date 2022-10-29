@@ -47,8 +47,8 @@
 #include <ElWires.h>
 
 
-#define APPL_NAME           "ElectroHatCones"
-#define APPL_VERSION        "1.0.1"
+#define APPL_NAME           "ElectroHat"
+#define APPL_VERSION        "1.0.0"
 
 #define VERBOSE             1
 
@@ -99,6 +99,8 @@ ElWires elWires;
 WebServices webSvcs(APPL_NAME, WEB_SERVER_PORT);
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+unsigned int loopCnt = 0;
 
 
 void(* reboot)(void) = 0;
@@ -202,9 +204,9 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg += ", \"RSSI\": " + String(WiFi.RSSI());
     msg += ", \"el\": \"" + String(configState.elState ? "true" : "false") + "\"";
     msg += ", \"randomSequence\": \"" + String(configState.randomSequence ? "true" : "false") + "\"";
-    msg += ", \"sequenceNumber\": " + String(configState.sequenceNumber) + "\"";
-    msg += ", \"sequenceSpeed\": " + String(configState.sequenceSpeed) + "\"";
-    msg += ", \"led\": \"" + String(configState.ledState ? "true" : "false");
+    msg += ", \"sequenceNumber\": " + String(configState.sequenceNumber);
+    msg += ", \"sequenceSpeed\": " + String(configState.sequenceSpeed);
+    msg += ", \"led\": \"" + String(configState.ledState ? "true" : "false") + "\"";
     Serial.println(msg);  //// TMP TMP TMP
     return(msg);
 };
@@ -286,7 +288,10 @@ void initElWires() {
 };
 
 void ledsRun() {
-    println("LEDs Run");
+    if ((loopCnt % 10000) == 0) {
+        println("LEDs Run");
+    }
+    delay(1);
 }
 
 void setup() { 
@@ -331,12 +336,14 @@ void loop() {
 
     if (configState.elState) {
         elWires.run();
-    } else if (configState.ledState) {
+    }
+    if (configState.ledState) {
         ledsRun();
-        delay(1);
     } else {
         // MAGIC NUMBER: measured to approximate constant delay through loop
         delayMicroseconds(100);
     }
     delay(1);
+
+    loopCnt += 1;
 };
