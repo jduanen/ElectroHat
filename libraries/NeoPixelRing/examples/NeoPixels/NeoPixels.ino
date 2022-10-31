@@ -13,15 +13,20 @@
 #define LED_COUNT           16
 #define DEF_LED_BRIGHTNESS  50  // max = 255
 
-#define COLOR_WIPE  0
-#define COLOR_FILL  1
-#define MARQUEE     2
-#define RAINBOW     3
+#define COLOR_WIPE      0
+#define COLOR_FILL      1
+#define MARQUEE         2
+#define RAINBOW_MARQUEE 3
+#define RAINBOW         4
+#define CUSTOM          5
+#define NUM_PATTERNS    6
 
 
 uint32_t loopCnt = 0;
 
 NeoPixelRing ring = NeoPixelRing();
+
+char *names[LED_COUNT];
 
 
 void setup() {
@@ -44,7 +49,6 @@ void setup() {
     Serial.println("Selected Color: 0x" + String(ring.getColor(), HEX));
     int n = ring.getNumPatterns();
     Serial.println("Number of Patterns: " + String(n));
-    char *names[n];
     int numPatterns = ring.getPatternNames(names, n);
     if (numPatterns < 1) {
         Serial.println("getPatternNames failed");
@@ -58,6 +62,27 @@ void setup() {
         }
         Serial.println(".");
     }
+    n = ring.getEnabledCustomPixels();
+    Serial.println("Enabled Pixels: 0x" + String(n, HEX));
+    ring.enableCustomPixels(0x3C, ring.makeColor(255, 0, 0), ring.makeColor(0, 255, 0));
+    ring.enableCustomPixels(0xAA00, ring.makeColor(0, 0, 255), ring.makeColor(255, 0, 255));
+    ring.enableCustomPixels(0x5500, ring.makeColor(0, 255, 255), ring.makeColor(255, 255, 0));
+    n = ring.getEnabledCustomPixels();
+    Serial.println("Currently enabled Pixels: 0x" + String(n, HEX));
+    ColorRange ranges[8] = {};
+    ring.getCustomPixels(0xFF, ranges, 8);
+    for (int i = 0; (i < 8); i++) {
+        Serial.println("    Pixel: " + String(i) + \
+            ", startColor: 0x" + String(ranges[i].startColor, HEX) + \
+            ", endColor: 0x" + String(ranges[i].endColor, HEX));
+    }
+    ring.setCustomDelta(128);
+    n = ring.getCustomDelta();
+    Serial.println("Custom Pixel Delta: " + String(n));
+    bool b = ring.getCustomBidir();
+    Serial.println("Custom Bidirectional: " + String(b));
+    ring.setCustomBidir(true);
+    Serial.println("Current Custom Bidirectional: " + String(b));
 
     Serial.println("\nSTART");
     ring.clear();
@@ -81,35 +106,48 @@ int c = 0;
 void loop() {
     int d;
 
-    if ((loopCnt % 128) == 0) {
-        p = (p + 1) % 3;
-        Serial.println("P: " + String(p) + ", Loop: " + String(loopCnt));
-        ring.clear();
-        c += 1;
+    if (false) {
+        if ((loopCnt % 512) == 0) {
+            p = (p + 1) % NUM_PATTERNS;
+            Serial.println("P: " + String(p) + ", Pattern: " + names[p] + ", Loop: " + String(loopCnt));
+            ring.clear();
+            c += 1;
+        }
+    } else {
+        p = CUSTOM;
     }
-
+    
     ring.selectPattern(p);
 
     switch (p) {
         case COLOR_WIPE:
-            d = 50;
+            d = 250;
             ring.setColor(colors[c % numColors]);
             break;
         case COLOR_FILL:
-            d = 75;
+            d = 300;
             ring.setColor(colors[loopCnt % numColors]);
             break;
         case MARQUEE:
-            d = 60;
+            d = 75;
+//            ring.setColor(colors[loopCnt % numColors]);
             break;
-        case RAINBOW:
+        case RAINBOW_MARQUEE:
             d = 75;
             break;
+        case RAINBOW:
+            d = 100;
+            break;
+        case CUSTOM:
+            d = 25;
+            break;
         default:
-            d = 10;
+            d = 100;
     }
-
     ring.setDelay(d);
-    ring.run();
+    unsigned long waitTime = ring.run();
+    if (waitTime > 0) {
+        delay(waitTime);
+    }
     loopCnt += 1;
 }
