@@ -24,6 +24,11 @@ typedef struct {
     char *name;
 } Patterns;
 
+typedef struct {
+    uint32_t startColor;
+    uint32_t endColor;
+} ColorRange;
+
 
 class NeoPixelRing {
 public:
@@ -42,7 +47,7 @@ public:
     NeoPixelRing(byte brightness);
     void test(byte test);
     void clear();
-    void run();
+    unsigned long run();
     uint32_t makeColor(byte r, byte g, byte b);
     void setColor(uint32_t color);
     uint32_t getColor();
@@ -52,11 +57,19 @@ public:
     byte getPatternNames(char *namePtrs[], byte number);
     byte getSelectedPattern();
     bool selectPattern(byte patternNum);
+    uint32_t getEnabledCustomPixels();
+    void getCustomPixels(uint32_t pixels, ColorRange colorRanges[], int size);
+    void disableCustomPixels(uint32_t pixels);
+    void enableCustomPixels(uint32_t pixels, uint32_t startColor, uint32_t endColor);
+    uint32_t getCustomDelta();
+    void setCustomDelta(uint32_t delta);
+    bool getCustomBidir();
+    void setCustomBidir(bool bidir);
 
 private:
     Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-    static byte const _NUM_PATTERNS = 4;
+    static byte const _NUM_PATTERNS = 6;    //// FIXME
 
     byte _pixelNum = 0;
     uint32_t _color = 0x000000;
@@ -65,18 +78,28 @@ private:
     unsigned long _nextRunTime = 0;
     uint32_t _firstPixelHue = 0;
     unsigned long _loopCnt = 0;
+    ColorRange _colorRanges[LED_COUNT];
+    uint32_t _customPixelEnables = 0;
+    int _customDelta = 64;
+    bool _customBidir = false;
 
     void _create(byte brightness);
+
     void _colorWipe();
     void _colorFill();
     void _marquee();
+    void _rainbowMarquee();
     void _rainbow();
+    void _custom();
 
+    //// FIXME
     const Patterns _patterns[_NUM_PATTERNS] = {
         {PATTERN_FUNC(_colorWipe), "Color Wipe"},
         {PATTERN_FUNC(_colorFill), "Color Fill"},
         {PATTERN_FUNC(_marquee), "Marquee"},
-        {PATTERN_FUNC(_rainbow), "Rainbow"}
+        {PATTERN_FUNC(_rainbowMarquee), "Rainbow Marquee"},
+        {PATTERN_FUNC(_rainbow), "Rainbow"},
+        {PATTERN_FUNC(_custom), "Custom"}
     };
 };
 

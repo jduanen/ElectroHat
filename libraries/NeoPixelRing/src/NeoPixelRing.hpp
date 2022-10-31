@@ -69,6 +69,41 @@ void NeoPixelRing::clear() {
     _ring->clear();
 };
 
+// Return which pixels are enabled for custom patterns.
+uint32_t NeoPixelRing::getEnabledCustomPixels() {
+    return _customPixelEnables;
+};
+
+// Return the color ranges for the selected pixel positions.
+void NeoPixelRing::getCustomPixels(uint32_t pixels, ColorRange colorRanges[], int size) {
+    int n = 0;
+    for (int i = 0; (i < 32); i++) {
+        if (pixels & (1 << i)) {
+            assert(n < size);
+            colorRanges[n] = _colorRanges[i];
+        }
+    }
+};
+
+// Disable pixels for custom display mode.
+// Give a bit-vector where a 1 means to disable the corresponding pixel.
+void NeoPixelRing::disableCustomPixels(uint32_t pixels) {
+    _customPixelEnables &= ~pixels;
+};
+
+// Enable pixels for custom display mode and provide a pair of colors to be
+//  cycled between.
+// Give a bit-vector where a 1 means to disable the corresponding pixel.
+void NeoPixelRing::enableCustomPixels(uint32_t pixels, uint32_t startColor, uint32_t endColor) {
+    for (int i = 0; (i < 32); i++) {
+        if (pixels & (1 << i)) {
+            _colorRanges[i].startColor = startColor;
+            _colorRanges[i].endColor = endColor;
+            _customPixelEnables |= (1 << i);
+        }
+    }
+};
+
 // Fill pixels sequentially with the selected color, with the selected delay
 //  time (in msec) between each illumination.
 // Clears the pixels at the start of every cycle.
@@ -89,10 +124,22 @@ void NeoPixelRing::_colorFill() {
     _ring->show();
 };
 
-// Movie-marquee-like chasing rainbow lights that precess
+// Movie-marquee-like chasing rainbow lights in the selected color
 void NeoPixelRing::_marquee() {
     _nextRunTime = millis() + _delay;
-//    _ring->clear();
+    _ring->clear();
+    int n = _ring->numPixels();
+    for (int i = (_loopCnt % 3); (i < n); i += 3) {
+        _ring->setPixelColor(i, _color);
+        _ring->show();
+    }
+    _firstPixelHue += 256;
+};
+
+// Movie-marquee-like chasing rainbow lights that precess
+void NeoPixelRing::_rainbowMarquee() {
+    _nextRunTime = millis() + _delay;
+    _ring->clear();
     int n = _ring->numPixels();
     for (int i = (_loopCnt % 3); (i < n); i += 3) {
         int hue = _firstPixelHue + i * 65536L / n;
@@ -110,23 +157,71 @@ void NeoPixelRing::_marquee() {
 void NeoPixelRing::_rainbow() {
     _nextRunTime = millis() + _delay;
     _ring->clear();
+//    Serial.println("R: " + String(_firstPixelHue));
     _ring->rainbow(_firstPixelHue);
     _ring->show();
     _firstPixelHue += 256;
 };
 
-void NeoPixelRing::run() {
+uint32_t NeoPixelRing::getCustomDelta() {
+    return _customDelta;
+};
+
+void NeoPixelRing::setCustomDelta(uint32_t delta) {
+    _customDelta = delta;
+};
+
+bool NeoPixelRing::getCustomBidir() {
+    return _customBidir;
+};
+
+void NeoPixelRing::setCustomBidir(bool bidir) {
+    _customBidir = bidir;
+};
+
+// Cycle pixels between a pair of colors.
+void NeoPixelRing::_custom() {
+    _nextRunTime = millis() + _delay;
+    _ring->clear();
+    for (int i = 0; (i < 32); i++) {
+        if (_customPixelEnables & (1 << i)) {
+            byte sR = ((_colorRanges[i].startColor >> 16) & 0xFF);
+            byte sG = ((_colorRanges[i].startColor >> 8) & 0xFF);
+            byte sB = (_colorRanges[i].startColor & 0xFF);
+            byte eR = ((_colorRanges[i].endColor >> 16) & 0xFF);
+            byte eG = ((_colorRanges[i].endColor >> 8) & 0xFF);
+            byte eB = (_colorRanges[i].endColor & 0xFF);
+            int incr;
+            if (_customBidir == true) {
+                incr = _loopCnt % (_customDelta * 2);
+                if (incr >= _customDelta) {
+                    incr = ((_customDelta * 2) - 1) - incr;
+                }
+            } else {
+                incr = _loopCnt % _customDelta;
+            }
+            byte r = sR + (((eR - sR) * incr) / _customDelta);
+            byte g = sG + (((eG - sG) * incr) / _customDelta);
+            byte b = sB + (((eB - sB) * incr) / _customDelta);
+            _ring->setPixelColor(i, r, g, b);
+        }
+    }
+    _ring->show();
+};
+
+unsigned long NeoPixelRing::run() {
     unsigned long now = millis();
     if (now > _nextRunTime) {
         Serial.println("Warning: " + String(now - _nextRunTime) + " msec late");
     } else {
         if (_nextRunTime > now) {
-            delay(_nextRunTime - now);
+            return ((_nextRunTime - now) - 1);  // deduct a msec to account for overheads
         }
     }
     _patterns[_patternNum].func(this);
     _loopCnt += 1;
     _pixelNum = _loopCnt % _ring->numPixels();
+    return 0L;
 };
 
 uint32_t NeoPixelRing::makeColor(byte r, byte g, byte b) {
