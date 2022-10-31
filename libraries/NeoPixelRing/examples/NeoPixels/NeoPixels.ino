@@ -62,13 +62,13 @@ void setup() {
         }
         Serial.println(".");
     }
-    n = ring.getEnabledCustomPixels();
-    Serial.println("Enabled Pixels: 0x" + String(n, HEX));
-    ring.enableCustomPixels(0x3C, ring.makeColor(255, 0, 0), ring.makeColor(0, 255, 0));
-    ring.enableCustomPixels(0xAA00, ring.makeColor(0, 0, 255), ring.makeColor(255, 0, 255));
-    ring.enableCustomPixels(0x5500, ring.makeColor(0, 255, 255), ring.makeColor(255, 255, 0));
+    ring.enableCustomPixels(0x03C0, ring.makeColor(0, 255, 255), ring.makeColor(0, 255, 255));
+    ring.enableCustomPixels(0xC003, ring.makeColor(255, 0, 255), ring.makeColor(255, 0, 255));
+    ring.enableCustomPixels(0x003C, ring.makeColor(255, 0, 0), ring.makeColor(0, 255, 0));
+    ring.enableCustomPixels(0x3C00, ring.makeColor(0, 255, 0), ring.makeColor(255, 0, 0));
     n = ring.getEnabledCustomPixels();
     Serial.println("Currently enabled Pixels: 0x" + String(n, HEX));
+
     ColorRange ranges[8] = {};
     ring.getCustomPixels(0xFF, ranges, 8);
     for (int i = 0; (i < 8); i++) {
@@ -139,7 +139,7 @@ void loop() {
             d = 100;
             break;
         case CUSTOM:
-            d = 25;
+            d = 10;
             break;
         default:
             d = 100;
