@@ -14,6 +14,10 @@
 #define LED_COUNT           16
 #define DEF_LED_BRIGHTNESS  50  // max = 255
 
+#ifndef UNUSED_ANALOG
+#define UNUSED_ANALOG       A0
+#endif /* UNUSED_ANALOG */
+
 #define PATTERN_FUNC(func)  [](NeoPixelRing* npr) { return npr->func();}
 
 class NeoPixelRing;
@@ -57,6 +61,8 @@ public:
     byte getPatternNames(char *namePtrs[], byte number);
     byte getSelectedPattern();
     bool selectPattern(byte patternNum);
+    bool randomPattern();
+    void enableRandomPattern(bool enable);
     uint32_t getEnabledCustomPixels();
     void getCustomPixels(uint32_t pixels, ColorRange colorRanges[], int size);
     void disableCustomPixels(uint32_t pixels);
@@ -65,6 +71,7 @@ public:
     void setCustomDelta(uint32_t delta);
     bool getCustomBidir();
     void setCustomBidir(bool bidir);
+    void fill(uint32_t color);
 
 private:
     Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -73,7 +80,7 @@ private:
 
     byte _pixelNum = 0;
     uint32_t _color = 0x000000;
-    uint32_t _delay = 0;
+    uint32_t _patternDelay = 0;
     byte _patternNum = 0;
     unsigned long _nextRunTime = 0;
     uint32_t _firstPixelHue = 0;
@@ -82,6 +89,7 @@ private:
     uint32_t _customPixelEnables = 0;
     int _customDelta = 64;
     bool _customBidir = false;
+    bool _randomPattern = false;
 
     void _create(byte brightness);
 
@@ -91,6 +99,8 @@ private:
     void _rainbowMarquee();
     void _rainbow();
     void _custom();
+
+    void _generateRandomPixel();
 
     //// FIXME
     const Patterns _patterns[_NUM_PATTERNS] = {
