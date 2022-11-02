@@ -13,13 +13,13 @@
 #define LED_COUNT           16
 #define DEF_LED_BRIGHTNESS  50  // max = 255
 
-#define COLOR_WIPE      0
-#define COLOR_FILL      1
-#define MARQUEE         2
-#define RAINBOW_MARQUEE 3
-#define RAINBOW         4
-#define CUSTOM          5
-#define NUM_PATTERNS    6
+#define COLOR_WIPE          0
+#define COLOR_FILL          1
+#define MARQUEE             2
+#define RAINBOW_MARQUEE     3
+#define RAINBOW             4
+#define CUSTOM              5
+#define NUM_PATTERNS        6
 
 
 uint32_t loopCnt = 0;
@@ -49,8 +49,7 @@ void setup() {
     Serial.println("Selected Color: 0x" + String(ring.getColor(), HEX));
     int n = ring.getNumPatterns();
     Serial.println("Number of Patterns: " + String(n));
-    int numPatterns = ring.getPatternNames(names, n);
-    if (numPatterns < 1) {
+`    if (numPatterns < 1) {
         Serial.println("getPatternNames failed");
     } else {
         Serial.print("Pattern Names (" + String(numPatterns) + "): ");
@@ -83,6 +82,10 @@ void setup() {
     Serial.println("Custom Bidirectional: " + String(b));
     ring.setCustomBidir(true);
     Serial.println("Current Custom Bidirectional: " + String(b));
+
+    ring.enableRandomPattern(false);
+    b = ring.randomPattern();
+    Serial.println("Random Pattern enable: " + String(b));
 
     Serial.println("\nSTART");
     ring.clear();
