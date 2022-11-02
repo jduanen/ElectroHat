@@ -70,6 +70,7 @@ void NeoPixelRing::test(byte test) {
 
 void NeoPixelRing::clear() {
     _ring->clear();
+    _ring->show();
 };
 
 // Return which pixels are enabled for custom patterns.
