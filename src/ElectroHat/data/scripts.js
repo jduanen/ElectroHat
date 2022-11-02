@@ -45,13 +45,24 @@
     elem = document.getElementById('sequenceNumber');
     elem.value = msgObj.sequenceNumber;
 
-    elem = document.getElementById('sequenceSpeed');
-    elem.value = msgObj.sequenceSpeed;
-    document.getElementById("speed").innerHTML = parseInt(msgObj.sequenceSpeed);
+    elem = document.getElementById('sequenceDelay');
+    elem.value = msgObj.sequenceDelay;
+    document.getElementById("seqDelay").innerHTML = parseInt(msgObj.sequenceDelay);
 
     var led = (msgObj.led == "true");
     document.getElementById('ledState').innerHTML = (led ? "ON" : "OFF");
     document.getElementById('led').checked = led;
+
+    var rp = (msgObj.randomPattern == "true");
+    document.getElementById('randomPattern').checked = rp;
+    document.getElementById('patternNumber').disabled = rp;
+
+    elem = document.getElementById('patternNumber');
+    elem.value = msgObj.patternNumber;
+
+    elem = document.getElementById('patternDelay');
+    elem.value = msgObj.patternDelay;
+    document.getElementById("patDelay").innerHTML = parseInt(msgObj.patternDelay);
 
     document.getElementById("save").disabled = false;
   }
@@ -62,8 +73,14 @@
   }
   function setSequence() {
     var seqNum = document.getElementById("sequenceNumber").value;
-    var seqSpeed = document.getElementById("sequenceSpeed").value;
-    var jsonMsg = JSON.stringify({"msgType": "sequence", "sequenceNumber": seqNum, "sequenceSpeed": seqSpeed});
+    var seqDelay = document.getElementById("sequenceDelay").value;
+    var jsonMsg = JSON.stringify({"msgType": "sequence", "sequenceNumber": seqNum, "sequenceDelay": seqDelay});
+    websocket.send(jsonMsg);
+  }
+  function setPattern() {
+    var patNum = document.getElementById("patternNumber").value;
+    var patDelay = document.getElementById("patternDelay").value;
+    var jsonMsg = JSON.stringify({"msgType": "pattern", "patternNumber": patNum, "patternDelay": patDelay});
     websocket.send(jsonMsg);
   }
   function saveConfiguration() {
@@ -73,8 +90,11 @@
                                   "elState": document.getElementById('el').checked,
                                   "randomSequence": document.getElementById("randomSequence").checked,
                                   "sequenceNumber": document.getElementById('sequenceNumber').value,
-                                  "sequenceSpeed": document.getElementById('sequenceSpeed').value,
-                                  "ledState": document.getElementById('led').checked
+                                  "sequenceDelay": document.getElementById('sequenceDelay').value,
+                                  "ledState": document.getElementById('led').checked,
+                                  "randomPattern": document.getElementById("randomPattern").checked,
+                                  "patternNumber": document.getElementById('patternNumber').value,
+                                  "patternDelay": document.getElementById('patternDelay').value
                                 });
     document.getElementById("save").disabled = true;
     websocket.send(jsonMsg);
@@ -83,6 +103,12 @@
     var randomSeq = document.getElementById("randomSequence").checked;
     document.getElementById("sequenceNumber").disabled = randomSeq;
     var jsonMsg = JSON.stringify({"msgType": "randomSequence", "state": randomSeq});
+    websocket.send(jsonMsg);
+  }
+  function toggleRandomPattern() {
+    var randomPat = document.getElementById("randomPattern").checked;
+    document.getElementById("patternNumber").disabled = randomPat;
+    var jsonMsg = JSON.stringify({"msgType": "randomPattern", "state": randomPat});
     websocket.send(jsonMsg);
   }
   function escapeHTML(s) {

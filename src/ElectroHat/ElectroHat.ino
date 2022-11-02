@@ -9,20 +9,25 @@
 *       (actually, it's slightly obfuscated, but essentially in the clear)
 *
 * WebSocket interface
-*  - From client to server:
+* - From client to server:
 *   * {"applName": <String>, "libVersion": <String>, "ipAddr": <String>,
 *      "ssid": <String>, "passwd": <String>, "RSSI": <Int>, "el": <Boolean>,
 *      "randomSequence": <Boolean>, "sequenceNumber": <Int>, "sequenceDelay": <Int>,
-*      "led": <Boolean>, "ledPattern"}
-*  - From server to client:
+*      "led": <Boolean>, "randomPattern": <Boolean>, "ledPattern": <Int>,
+*      "patternDelay": <Int>}
+* - From server to client:
+*   * {"msgType": "query"}
 *   * {"msgType": "el", "state": <Boolean>}
 *   * {"msgType": "sequence", "sequenceNumber: <Int>, sequenceDelay: <Int>}
-*   * {"msgType": "saveConf", "ssid": document.getElementById("ssid").value,
-*      "passwd": <String>, "elState": <Boolean>, "randomSequence": <Boolean>,
-*      "sequenceNumber": <Int>, "sequenceDelay": <Int>, "ledState": <Boolean>}
 *   * {"msgType": "randomSequence", "state": <Boolean>}
 *   * {"msgType": "led", "state": <Boolean>}
-**** TODO add Pixels stuff
+*   * {"msgType": "pattern", "patternNumber: <Int>, patternDelay: <Int>}
+*   * {"msgType": "randomPattern", "state": <Boolean>}
+*   * {"msgType": "saveConf", "ssid": document.getElementById("ssid").value,
+*      "passwd": <String>, "elState": <Boolean>, "randomSequence": <Boolean>,
+*      "sequenceNumber": <Int>, "sequenceDelay": <Int>, "ledState": <Boolean>,
+*      "randomPattern": <Boolean>, "patternNumber": <Int>, "patternDelay": <Int>}
+*   * {"msgType": "reboot"}
 *
 * Notes:
 *  - I2C defaults: SDA=GPIO4 -> D2, SCL=GPIO5 -> D1
@@ -85,16 +90,19 @@
 typedef struct {
     String          ssid;
     String          passwd;
+
     bool            elState;
     bool            randomSequence;
     unsigned short  sequenceNumber;
-    unsigned short  sequenceDelay;
+    uint32_t        sequenceDelay;
+
     bool            ledState;
-    uint32_t        ledDelay;
-    unsigned short  ledDelta;
-    uint32_t        ledColor;
     bool            randomPattern;
     unsigned short  patternNumber;
+    uint32_t        patternDelay;
+
+    unsigned short  ledDelta;
+    uint32_t        ledColor;
     //// TODO add custom pixels description
     bool            bidir;
 } ConfigState;
@@ -102,16 +110,19 @@ typedef struct {
 ConfigState configState = {
     String(WLAN_SSID),
     String(rot47(WLAN_PASS)),
+
     true,
     false,
     STARTUP_EL_SEQUENCE,
     STARTUP_EL_DELAY,
+
     true,
-    STARTUP_LED_DELAY,
-    STARTUP_LED_DELTA,
-    STARTUP_LED_COLOR,
     STARTUP_LED_RANDOM,
     STARTUP_LED_PATTERN,
+    STARTUP_LED_DELAY,
+
+    STARTUP_LED_DELTA,
+    STARTUP_LED_COLOR,
     //// TODO add custom pixels description
     STARTUP_LED_BIDIR
 };
@@ -168,6 +179,8 @@ String webpageProcessor(const String& var) {
         return (String(elWires.numSequences()));
     } else if (var == "LED_STATE") {
         return (configState.ledState ? "ON" : "OFF");
+    } else if (var == "NUMBER_OF_PATTERNS") {
+        return (String(ring.getNumPatterns()));
     }
     return(String());
 };
@@ -192,6 +205,19 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     } else if (msgType.equalsIgnoreCase("randomSequence")) {
         elWires.enableRandomSequence(wsMsg["state"]);
         configState.randomSequence = wsMsg["state"];
+    } else if (msgType.equalsIgnoreCase("led")) {
+        configState.ledState = wsMsg["state"];
+        if (!configState.ledState) {
+            ring.clear();
+        }
+    } else if (msgType.equalsIgnoreCase("pattern")) {
+        ring.selectPattern(wsMsg["patternNumber"]);
+        ring.setDelay(wsMsg["patternDelay"]);
+        configState.patternNumber = ring.getSelectedPattern();
+        configState.patternDelay = ring.getDelay();
+    } else if (msgType.equalsIgnoreCase("randomPattern")) {
+        ring.enableRandomPattern(wsMsg["state"]);
+        configState.randomPattern = wsMsg["state"];
     } else if (msgType.equalsIgnoreCase("saveConf")) {
         String ssidStr = String(wsMsg["ssid"]);
         configState.ssid = ssidStr;
@@ -208,14 +234,18 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         cs.configJsonDoc["sequenceNumber"] = wsMsg["sequenceNumber"];
         configState.sequenceDelay = wsMsg["sequenceDelay"];
         cs.configJsonDoc["sequenceDelay"] = wsMsg["sequenceDelay"];
+
+        configState.elState = wsMsg["ledState"];
+        cs.configJsonDoc["ledState"] = wsMsg["ledState"];
+        configState.randomSequence = wsMsg["randomPattern"];
+        cs.configJsonDoc["randomPattern"] = wsMsg["randomPattern"];
+        configState.patternNumber = wsMsg["patternNumber"];
+        cs.configJsonDoc["patternNumber"] = wsMsg["patternNumber"];
+        configState.patternDelay = wsMsg["patternDelay"];
+        cs.configJsonDoc["patternDelay"] = wsMsg["patternDelay"];
     
         serializeJsonPretty(cs.configJsonDoc, Serial);
         cs.saveConfig();
-    } else if (msgType.equalsIgnoreCase("led")) {
-        configState.ledState = wsMsg["state"];
-        if (!configState.ledState) {
-            ring.clear();
-        }
     } else if (msgType.equalsIgnoreCase("reboot")) {
         println("REBOOTING...");
         reboot();
@@ -231,6 +261,9 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg += ", \"sequenceNumber\": " + String(configState.sequenceNumber);
     msg += ", \"sequenceDelay\": " + String(configState.sequenceDelay);
     msg += ", \"led\": \"" + String(configState.ledState ? "true" : "false") + "\"";
+    msg += ", \"randomPattern\": \"" + String(configState.randomPattern ? "true" : "false") + "\"";
+    msg += ", \"patternNumber\": " + String(configState.patternNumber);
+    msg += ", \"patternDelay\": " + String(configState.patternDelay);
     Serial.println(msg);  //// TMP TMP TMP
     return(msg);
 };
@@ -315,7 +348,7 @@ void initLEDs() {
     ring.clear();
     ring.fill(ring.makeColor(255, 255, 255));  // WHITE = all sub-pixels on
 
-    ring.setDelay(configState.ledDelay);
+    ring.setDelay(configState.patternDelay);
     ring.setCustomDelta(configState.ledDelta);
     ring.setColor(configState.ledColor);
     ring.enableRandomPattern(configState.randomPattern);

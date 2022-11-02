@@ -17,7 +17,7 @@
       <p><span class="staticStateName">Library Version: </span><span class="staticStateValue" id="libVersion">%LIB_VERSION%</span></p>
       <p><span class="staticStateName">WIFI Mode: </span><span class="staticStateValue" id="wifiMode">%WIFI_MODE%</span></p>
       <p><span class="staticStateName"># EL Wire Sequences: </span><span class="staticStateValue" id="numSequences">%NUMBER_OF_SEQUENCES%</span></p>
-      <p><span class="staticStateName"># LED Patterns: </span><span class="staticStateValue" id="numLedPatterns">%NUMBER_OF_LED_PATTERNS%</span></p>
+      <p><span class="staticStateName"># LED Patterns: </span><span class="staticStateValue" id="numPatterns">%NUMBER_OF_PATTERNS%</span></p>
       <p><span class="stateName">RSSI: </span><span class="stateValue" id="rssi">%RSSI%</span></p>
     </div>
     <br>
@@ -41,14 +41,14 @@
         </label>
       </div>
       <div class="vertical-center">
-        Random Sequence: 
+        Random Sequence:
         <input type="checkbox" id="randomSequence" name="randomSequence" onclick="toggleRandomSequence()">
         <br>
         Sequence Number:
         <select id="sequenceNumber" name="sequenceNumber" onchange="setSequence()"></select>
         <br>
-        Sequence Speed:
-        <input type="range", id="sequenceSpeed", min="1", max="1000", value="333" onchange="setSequence()"> &nbsp <span id="speed"></span>
+        Sequence Delay:
+        <input type="range", id="sequenceDelay", min="1", max="1000", value="333" onchange="setSequence()"> &nbsp <span id="seqDelay"></span>
       </div>
 
       <h3>LEDs</h3>
@@ -60,7 +60,14 @@
         </label>
       </div>
       <div class="vertical-center">
-        TBD
+        Random Pattern:
+        <input type="checkbox" id="randomPattern" name="randomPattern" onclick="toggleRandomPattern()">
+        <br>
+        Pattern Number:
+        <select id="patternNumber" name="patternNumber" onchange="setPattern()"></select>
+        <br>
+        Pattern Delay:
+        <input type="range", id="patternDelay", min="1", max="1000", value="333" onchange="setPattern()"> &nbsp <span id="patDelay"></span>
       </div>
 
       <div class="vertical-center">
@@ -84,6 +91,18 @@
       child = select.lastElementChild;
     }
     for (var i = 0; i < %NUMBER_OF_SEQUENCES%; i++) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.innerHTML = i;
+      select.appendChild(opt);
+    }
+    var select = document.getElementById('patternNumber');
+    var child = select.lastElementChild;
+    while (child) {
+      select.removeChild(child);
+      child = select.lastElementChild;
+    }
+    for (var i = 0; i < %NUMBER_OF_PATTERNS%; i++) {
       var opt = document.createElement('option');
       opt.value = i;
       opt.innerHTML = i;
