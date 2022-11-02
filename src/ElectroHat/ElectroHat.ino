@@ -12,15 +12,16 @@
 *  - From client to server:
 *   * {"applName": <String>, "libVersion": <String>, "ipAddr": <String>,
 *      "ssid": <String>, "passwd": <String>, "RSSI": <Int>, "el": <Boolean>,
-*      "randomSequence": <Boolean>, "sequenceNumber": <Int>, "sequenceSpeed": <Int>,
-*      "led": <Boolean>}
+*      "randomSequence": <Boolean>, "sequenceNumber": <Int>, "sequenceDelay": <Int>,
+*      "led": <Boolean>, "ledPattern"}
 *  - From server to client:
 *   * {"msgType": "el", "state": <Boolean>}
-*   * {"msgType": "sequence", "sequenceNumber: <Int>, sequenceSpeed: <Int>}
+*   * {"msgType": "sequence", "sequenceNumber: <Int>, sequenceDelay: <Int>}
 *   * {"msgType": "saveConf", "ssid": document.getElementById("ssid").value,
 *      "passwd": <String>, "elState": <Boolean>, "randomSequence": <Boolean>,
-*      "sequenceNumber": <Int>, "sequenceSpeed": <Int>}
+*      "sequenceNumber": <Int>, "sequenceDelay": <Int>, "ledState": <Boolean>}
 *   * {"msgType": "randomSequence", "state": <Boolean>}
+*   * {"msgType": "led", "state": <Boolean>}
 **** TODO add Pixels stuff
 *
 * Notes:
@@ -45,6 +46,7 @@
 #include <ConfigService.h>
 #include <WebServices.h>
 #include <ElWires.h>
+#include <NeoPixelRing.h>
 
 
 #define APPL_NAME           "ElectroHat"
@@ -61,7 +63,7 @@
 #define STD_WAIT            35
 
 #define STARTUP_EL_SEQUENCE 0
-#define STARTUP_EL_SPEED    100
+#define STARTUP_EL_DELAY    100
 
 #define EH_HTML_PATH        "/index.html"
 #define EH_STYLE_PATH       "/style.css"
@@ -69,19 +71,32 @@
 
 #define VALID_ENTRY(doc, key)    (doc.containsKey(key) && !doc[key].isNull())
 
-#define LED_PIN         15
-#define LED_COUNT       16
-#define LED_BRIGHTNESS  50  // Set BRIGHTNESS to about 1/5 (max = 255)
+//#define MAX_LED_PATTERNS    ?
+
+#define STARTUP_LED_DELAY   100
+#define STARTUP_LED_DELTA   64
+#define STARTUP_LED_COLOR   0xFFFFFF
+#define STARTUP_LED_RANDOM  false
+#define STARTUP_LED_PATTERN 0
+//// TODO add custom pixels description
+#define STARTUP_LED_BIDIR   true
 
 
 typedef struct {
-    String         ssid;
-    String         passwd;
-    bool           elState;
-    bool           randomSequence;
-    unsigned short sequenceNumber;
-    unsigned short sequenceSpeed;
+    String          ssid;
+    String          passwd;
+    bool            elState;
+    bool            randomSequence;
+    unsigned short  sequenceNumber;
+    unsigned short  sequenceDelay;
     bool            ledState;
+    uint32_t        ledDelay;
+    unsigned short  ledDelta;
+    uint32_t        ledColor;
+    bool            randomPattern;
+    unsigned short  patternNumber;
+    //// TODO add custom pixels description
+    bool            bidir;
 } ConfigState;
 
 ConfigState configState = {
@@ -90,15 +105,24 @@ ConfigState configState = {
     true,
     false,
     STARTUP_EL_SEQUENCE,
-    STARTUP_EL_SPEED,
-    true
+    STARTUP_EL_DELAY,
+    true,
+    STARTUP_LED_DELAY,
+    STARTUP_LED_DELTA,
+    STARTUP_LED_COLOR,
+    STARTUP_LED_RANDOM,
+    STARTUP_LED_PATTERN,
+    //// TODO add custom pixels description
+    STARTUP_LED_BIDIR
 };
 
 ElWires elWires;
 
 WebServices webSvcs(APPL_NAME, WEB_SERVER_PORT);
 
-Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+NeoPixelRing ring = NeoPixelRing();
+
+char *patternNames[LED_COUNT];
 
 unsigned int loopCnt = 0;
 
@@ -162,9 +186,9 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
             elWires.clear();
         }
     } else if (msgType.equalsIgnoreCase("sequence")) {
-        elWires.setSequence(wsMsg["sequenceNumber"], wsMsg["sequenceSpeed"]);
+        elWires.setSequence(wsMsg["sequenceNumber"], wsMsg["sequenceDelay"]);
         configState.sequenceNumber = elWires.sequenceNumber();
-        configState.sequenceSpeed = elWires.sequenceSpeed();
+        configState.sequenceDelay = elWires.sequenceDelay();
     } else if (msgType.equalsIgnoreCase("randomSequence")) {
         elWires.enableRandomSequence(wsMsg["state"]);
         configState.randomSequence = wsMsg["state"];
@@ -182,15 +206,15 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         cs.configJsonDoc["randomSequence"] = wsMsg["randomSequence"];
         configState.sequenceNumber = wsMsg["sequenceNumber"];
         cs.configJsonDoc["sequenceNumber"] = wsMsg["sequenceNumber"];
-        configState.sequenceSpeed = wsMsg["sequenceSpeed"];
-        cs.configJsonDoc["sequenceSpeed"] = wsMsg["sequenceSpeed"];
+        configState.sequenceDelay = wsMsg["sequenceDelay"];
+        cs.configJsonDoc["sequenceDelay"] = wsMsg["sequenceDelay"];
     
         serializeJsonPretty(cs.configJsonDoc, Serial);
         cs.saveConfig();
     } else if (msgType.equalsIgnoreCase("led")) {
         configState.ledState = wsMsg["state"];
         if (!configState.ledState) {
-            strip.show();
+            ring.clear();
         }
     } else if (msgType.equalsIgnoreCase("reboot")) {
         println("REBOOTING...");
@@ -205,7 +229,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg += ", \"el\": \"" + String(configState.elState ? "true" : "false") + "\"";
     msg += ", \"randomSequence\": \"" + String(configState.randomSequence ? "true" : "false") + "\"";
     msg += ", \"sequenceNumber\": " + String(configState.sequenceNumber);
-    msg += ", \"sequenceSpeed\": " + String(configState.sequenceSpeed);
+    msg += ", \"sequenceDelay\": " + String(configState.sequenceDelay);
     msg += ", \"led\": \"" + String(configState.ledState ? "true" : "false") + "\"";
     Serial.println(msg);  //// TMP TMP TMP
     return(msg);
@@ -225,7 +249,7 @@ void config() {
     cs.open(CONFIG_PATH);
 
     unsigned short  sequenceNumber;
-    unsigned short  sequenceSpeed;
+    unsigned short  sequenceDelay;
 
     if (!VALID_ENTRY(cs.configJsonDoc, "ssid")) {
         cs.configJsonDoc["ssid"] = configState.ssid;
@@ -247,8 +271,8 @@ void config() {
         cs.configJsonDoc["sequenceNumber"] = configState.sequenceNumber;
         dirty = true;
     }
-    if (!VALID_ENTRY(cs.configJsonDoc, "sequenceSpeed")) {
-        cs.configJsonDoc["sequenceSpeed"] = configState.sequenceSpeed;
+    if (!VALID_ENTRY(cs.configJsonDoc, "sequenceDelay")) {
+        cs.configJsonDoc["sequenceDelay"] = configState.sequenceDelay;
         dirty = true;
     }
     if (!VALID_ENTRY(cs.configJsonDoc, "ledState")) {
@@ -265,7 +289,7 @@ void config() {
     configState.elState = cs.configJsonDoc["elState"].as<bool>();
     configState.randomSequence = cs.configJsonDoc["randomSequence"].as<bool>();
     configState.sequenceNumber = cs.configJsonDoc["sequenceNumber"].as<unsigned int>();
-    configState.sequenceSpeed = cs.configJsonDoc["sequenceSpeed"].as<unsigned int>();
+    configState.sequenceDelay = cs.configJsonDoc["sequenceDelay"].as<unsigned int>();
     configState.ledState = cs.configJsonDoc["ledState"].as<bool>();
     if (VERBOSE) {
         println("Config File:");
@@ -280,18 +304,61 @@ void config() {
 void initElWires() {
     println("Init EL Wires");
     elWires.clear();
-    elWires.setSequence(configState.sequenceNumber, configState.sequenceSpeed);
+    elWires.setSequence(configState.sequenceNumber, configState.sequenceDelay);
     println("Number of Sequences: " + String(elWires.numSequences()));
     println("Random Sequence Enabled: " + String(elWires.randomSequence() ? "Yes" : "No"));
     println("Sequence Number: " + String(elWires.sequenceNumber()));
-    println("Sequence Speed: " + String(elWires.sequenceSpeed()));
+    println("Sequence Delay: " + String(elWires.sequenceDelay()));
 };
 
-void ledsRun() {
-    if ((loopCnt % 10000) == 0) {
-        println("LEDs Run");
+void initLEDs() {
+    ring.clear();
+    ring.fill(ring.makeColor(255, 255, 255));  // WHITE = all sub-pixels on
+
+    ring.setDelay(configState.ledDelay);
+    ring.setCustomDelta(configState.ledDelta);
+    ring.setColor(configState.ledColor);
+    ring.enableRandomPattern(configState.randomPattern);
+    ring.selectPattern(configState.patternNumber);
+    //// TODO initialize custom pattern
+    ring.setCustomBidir(configState.bidir);
+
+    Serial.println("LED Delay: " + String(ring.getDelay()));
+    Serial.println("Custom Pixel Color Delta: " + String(ring.getCustomDelta()));
+    Serial.println("Selected LED Color: 0x" + String(ring.getColor(), HEX));
+    Serial.println("Random Pattern enable: " + String(ring.randomPattern()));
+    int n = ring.getNumPatterns();
+    if (n < 1) {
+        Serial.println("getPatternNames failed");
+    } else {
+        Serial.println("Number of Patterns: " + String(n));
     }
-    delay(1);
+    int numPatterns = ring.getPatternNames(patternNames, LED_COUNT);
+    Serial.print("Pattern Names (" + String(numPatterns) + "): ");
+    for (int i = 0; (i < numPatterns); i++) {
+        if (i > 0) {
+            Serial.print(", ");
+        }
+        Serial.print(patternNames[i]);
+    }
+    Serial.println(".");
+    Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
+    ColorRange colorRanges[LED_COUNT] = {};
+    ring.getCustomPixels(0xFF, colorRanges, LED_COUNT);
+    for (int i = 0; (i < LED_COUNT); i++) {
+        Serial.println("    Pixel: " + String(i) + \
+            ", startColor: 0x" + String(colorRanges[i].startColor, HEX) + \
+            ", endColor: 0x" + String(colorRanges[i].endColor, HEX));
+    }
+    Serial.println("Custom Pattern Bidirectional: " + String(ring.getCustomBidir()));
+
+    ring.fill(ring.makeColor(255, 0, 0));  // RED = all sub-pixels on
+    delay(500);
+    ring.fill(ring.makeColor(0, 255, 0));  // GREEN = all sub-pixels on
+    delay(500);
+    ring.fill(ring.makeColor(0, 0, 255));  // BLUE = all sub-pixels on
+    delay(500);
+    ring.clear();
 }
 
 void setup() { 
@@ -323,27 +390,32 @@ void setup() {
 
     webSvcs.updateClients();
 
-    strip.begin();
-    strip.show();  // turn off all pixels
-    strip.setBrightness(LED_BRIGHTNESS);
+    initLEDs();
     Serial.println("NeoPixels function started");
 
     Serial.println("READY");
 };
 
 void loop() {
+    uint32_t elWaitTime, ledWaitTime, waitTime;
+
     webSvcs.run();
 
     if (configState.elState) {
-        elWires.run();
+        elWaitTime = elWires.run();
     }
     if (configState.ledState) {
-        ledsRun();
-    } else {
-        // MAGIC NUMBER: measured to approximate constant delay through loop
-        delayMicroseconds(100);
+        ledWaitTime = ring.run();
     }
-    delay(1);
+
+    waitTime = min(elWaitTime, ledWaitTime);
+    if (waitTime > 10) {
+        delay(waitTime);
+    }
+
+    if (false) {
+        Serial.println("EL: " + String(elWaitTime) + ", LED: " + String(ledWaitTime));
+    }
 
     loopCnt += 1;
 };
