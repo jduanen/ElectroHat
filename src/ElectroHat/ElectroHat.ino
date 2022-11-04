@@ -13,20 +13,22 @@
 *   * {"applName": <String>, "libVersion": <String>, "ipAddr": <String>,
 *      "ssid": <String>, "passwd": <String>, "RSSI": <Int>, "el": <Boolean>,
 *      "randomSequence": <Boolean>, "sequenceNumber": <Int>, "sequenceDelay": <Int>,
-*      "led": <Boolean>, "randomPattern": <Boolean>, "ledPattern": <Int>,
-*      "patternDelay": <Int>}
+*      "led": <Boolean>, "randomPattern": <Boolean>, "patternNumber": <Int>,
+*      "patternDelay": <Int>, "patternColor": <Int>, "startColor": <Int>, "endColor": <Int>}
 * - From server to client:
 *   * {"msgType": "query"}
 *   * {"msgType": "el", "state": <Boolean>}
-*   * {"msgType": "sequence", "sequenceNumber: <Int>, sequenceDelay: <Int>}
+*   * {"msgType": "sequence", "sequenceNumber": <Int>, "sequenceDelay": <Int>}
 *   * {"msgType": "randomSequence", "state": <Boolean>}
 *   * {"msgType": "led", "state": <Boolean>}
-*   * {"msgType": "pattern", "patternNumber: <Int>, patternDelay: <Int>}
+*   * {"msgType": "pattern", "patternNumber": <Int>, "patternDelay": <Int>,
+*      "patternColor": <Int>, "startColor": <Int>, "endColor": <Int>}
 *   * {"msgType": "randomPattern", "state": <Boolean>}
 *   * {"msgType": "saveConf", "ssid": document.getElementById("ssid").value,
 *      "passwd": <String>, "elState": <Boolean>, "randomSequence": <Boolean>,
 *      "sequenceNumber": <Int>, "sequenceDelay": <Int>, "ledState": <Boolean>,
-*      "randomPattern": <Boolean>, "patternNumber": <Int>, "patternDelay": <Int>}
+*      "randomPattern": <Boolean>, "patternNumber": <Int>, "patternDelay": <Int>,
+*      "patternColor": <Int>, "startColor": <Int>, "endColor": <Int>}
 *   * {"msgType": "reboot"}
 *
 * Notes:
@@ -76,7 +78,7 @@
 
 #define VALID_ENTRY(doc, key)    (doc.containsKey(key) && !doc[key].isNull())
 
-//#define MAX_LED_PATTERNS    ?
+#define MAX_PATTERNS        10
 
 #define STARTUP_LED_DELAY   100
 #define STARTUP_LED_DELTA   64
@@ -100,11 +102,12 @@ typedef struct {
     bool            randomPattern;
     unsigned short  patternNumber;
     uint32_t        patternDelay;
-
-    unsigned short  ledDelta;
-    uint32_t        ledColor;
+    uint32_t        patternColor;
+    uint32_t        startColor;
+    uint32_t        endColor;
+    unsigned short  customDelta;
     //// TODO add custom pixels description
-    bool            bidir;
+    bool            customBidir;
 } ConfigState;
 
 ConfigState configState = {
@@ -120,9 +123,8 @@ ConfigState configState = {
     STARTUP_LED_RANDOM,
     STARTUP_LED_PATTERN,
     STARTUP_LED_DELAY,
-
-    STARTUP_LED_DELTA,
     STARTUP_LED_COLOR,
+    STARTUP_LED_DELTA,
     //// TODO add custom pixels description
     STARTUP_LED_BIDIR
 };
@@ -133,7 +135,7 @@ WebServices webSvcs(APPL_NAME, WEB_SERVER_PORT);
 
 NeoPixelRing ring = NeoPixelRing();
 
-char *patternNames[LED_COUNT];
+char *patternNamePtrs[MAX_PATTERNS];
 
 unsigned int loopCnt = 0;
 
@@ -181,6 +183,15 @@ String webpageProcessor(const String& var) {
         return (configState.ledState ? "ON" : "OFF");
     } else if (var == "NUMBER_OF_PATTERNS") {
         return (String(ring.getNumPatterns()));
+    } else if (var == "PATTERN_NAMES") {
+        String patternNames = "";
+        for (int i = 0; (i < ring.getNumPatterns()); i++) {
+            if (i > 0) {
+                patternNames.concat(String(","));
+            }
+            patternNames.concat(String("\"") + patternNamePtrs[i] + String("\""));
+        }
+        return patternNames;
     }
     return(String());
 };
@@ -213,8 +224,12 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     } else if (msgType.equalsIgnoreCase("pattern")) {
         ring.selectPattern(wsMsg["patternNumber"]);
         ring.setDelay(wsMsg["patternDelay"]);
+        ring.setColor(wsMsg["patternColor"]);
         configState.patternNumber = ring.getSelectedPattern();
         configState.patternDelay = ring.getDelay();
+        configState.patternColor = ring.getColor();
+        configState.startColor = wsMsg["startColor"];
+        configState.endColor = wsMsg["endColor"];
     } else if (msgType.equalsIgnoreCase("randomPattern")) {
         ring.enableRandomPattern(wsMsg["state"]);
         configState.randomPattern = wsMsg["state"];
@@ -243,6 +258,12 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         cs.configJsonDoc["patternNumber"] = wsMsg["patternNumber"];
         configState.patternDelay = wsMsg["patternDelay"];
         cs.configJsonDoc["patternDelay"] = wsMsg["patternDelay"];
+        configState.patternColor = wsMsg["patternColor"];
+        cs.configJsonDoc["patternColor"] = wsMsg["patternColor"];
+        configState.startColor = wsMsg["startColor"];
+        cs.configJsonDoc["startColor"] = wsMsg["startColor"];
+        configState.endColor = wsMsg["endColor"];
+        cs.configJsonDoc["endColor"] = wsMsg["endColor"];
     
         serializeJsonPretty(cs.configJsonDoc, Serial);
         cs.saveConfig();
@@ -264,6 +285,9 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg += ", \"randomPattern\": \"" + String(configState.randomPattern ? "true" : "false") + "\"";
     msg += ", \"patternNumber\": " + String(configState.patternNumber);
     msg += ", \"patternDelay\": " + String(configState.patternDelay);
+    msg += ", \"patternColor\": " + String(configState.patternColor);
+    msg += ", \"startColor\": " + String(configState.startColor);
+    msg += ", \"endColor\": " + String(configState.endColor);
     Serial.println(msg);  //// TMP TMP TMP
     return(msg);
 };
@@ -349,32 +373,35 @@ void initLEDs() {
     ring.fill(ring.makeColor(255, 255, 255));  // WHITE = all sub-pixels on
 
     ring.setDelay(configState.patternDelay);
-    ring.setCustomDelta(configState.ledDelta);
-    ring.setColor(configState.ledColor);
+    ring.setCustomDelta(configState.customDelta);
+    ring.setColor(configState.patternColor);
     ring.enableRandomPattern(configState.randomPattern);
     ring.selectPattern(configState.patternNumber);
     //// TODO initialize custom pattern
-    ring.setCustomBidir(configState.bidir);
+    ring.setCustomBidir(configState.customBidir);
 
     Serial.println("LED Delay: " + String(ring.getDelay()));
     Serial.println("Custom Pixel Color Delta: " + String(ring.getCustomDelta()));
     Serial.println("Selected LED Color: 0x" + String(ring.getColor(), HEX));
     Serial.println("Random Pattern enable: " + String(ring.randomPattern()));
-    int n = ring.getNumPatterns();
-    if (n < 1) {
+    int num = ring.getNumPatterns();
+    Serial.println("Number of Patterns: " + String(num));
+    int numPatterns = ring.getPatternNames(patternNamePtrs, MAX_PATTERNS);
+    if (numPatterns < 1) {
         Serial.println("getPatternNames failed");
     } else {
-        Serial.println("Number of Patterns: " + String(n));
-    }
-    int numPatterns = ring.getPatternNames(patternNames, LED_COUNT);
-    Serial.print("Pattern Names (" + String(numPatterns) + "): ");
-    for (int i = 0; (i < numPatterns); i++) {
-        if (i > 0) {
-            Serial.print(", ");
+        if (numPatterns != num) {
+            Serial.println("getPatternNames mismatch: " + String(numPatterns) + " != " + String(num));
         }
-        Serial.print(patternNames[i]);
+        Serial.print("Pattern Names (" + String(numPatterns) + "): ");
+        for (int i = 0; (i < numPatterns); i++) {
+            if (i > 0) {
+                Serial.print(", ");
+            }
+            Serial.print(patternNamePtrs[i]);
+        }
+        Serial.println(".");
     }
-    Serial.println(".");
     Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
     ColorRange colorRanges[LED_COUNT] = {};
     ring.getCustomPixels(0xFF, colorRanges, LED_COUNT);
