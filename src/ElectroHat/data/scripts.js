@@ -55,7 +55,11 @@
 
     var rp = (msgObj.randomPattern == "true");
     document.getElementById('randomPattern').checked = rp;
-    document.getElementById('patternNumber').disabled = rp;
+    if (rp) {
+      ledModeA();
+    } else {
+      ledModeB();
+    }
 
     elem = document.getElementById('patternNumber');
     elem.value = msgObj.patternNumber;
@@ -63,6 +67,15 @@
     elem = document.getElementById('patternDelay');
     elem.value = msgObj.patternDelay;
     document.getElementById("patDelay").innerHTML = parseInt(msgObj.patternDelay);
+
+    elem = document.getElementById('patternColor');
+    elem.value = "#" + (msgObj.patternColor).toString(16);
+
+    elem = document.getElementById('startColor');
+    elem.value = "#" + (msgObj.startColor).toString(16);
+
+    elem = document.getElementById('endColor');
+    elem.value = "#" + (msgObj.endColor).toString(16);
 
     document.getElementById("save").disabled = false;
   }
@@ -77,11 +90,57 @@
     var jsonMsg = JSON.stringify({"msgType": "sequence", "sequenceNumber": seqNum, "sequenceDelay": seqDelay});
     websocket.send(jsonMsg);
   }
+  function ledModeA() {
+    document.getElementById("patternColor").disabled = true;
+    document.getElementById("startColor").disabled = true;
+    document.getElementById("endColor").disabled = true;
+  }
+  function ledModeB() {
+    document.getElementById("patternColor").disabled = false;
+    document.getElementById("startColor").disabled = true;
+    document.getElementById("endColor").disabled = true;
+  }
+  function ledModeC() {
+    document.getElementById("patternColor").disabled = true;
+    document.getElementById("startColor").disabled = false;
+    docuent.getElementById("endColor").disabled = false;
+  }
   function setPattern() {
     var patNum = document.getElementById("patternNumber").value;
     var patDelay = document.getElementById("patternDelay").value;
-    var jsonMsg = JSON.stringify({"msgType": "pattern", "patternNumber": patNum, "patternDelay": patDelay});
+    var patColor = parseInt(document.getElementById("patternColor").value.substr(1), 16);
+    var startColor = parseInt(document.getElementById("startColor").value.substr(1), 16);
+    var endColor = parseInt(document.getElementById("endColor").value.substr(1), 16);
+    var jsonMsg = JSON.stringify({"msgType": "pattern",
+                                  "patternNumber": patNum,
+                                  "patternDelay": patDelay,
+                                  "patternColor": patColor,
+                                  "startColor": startColor,
+                                  "endColor": endColor});
+    console.log("!!!!" + jsonMsg);
     websocket.send(jsonMsg);
+    switch (patternNames[patNum]) {
+      case "Rainbow Marquee":
+        ledModeA();
+        break;
+      case "Rainbow":
+        ledModeA();
+        break;
+      case "Color Wipe":
+        ledModeB();
+        break;
+      case "Color Fill":
+        ledModeB();
+        break;
+      case "Marquee":
+        ledModeB();
+        break;
+      case "Custom":
+        ledModeC();
+        break;
+      default:
+        console.log("Unknown pattern: " + patternNames[patNum]);
+    }
   }
   function saveConfiguration() {
     var jsonMsg = JSON.stringify({"msgType": "saveConf",
@@ -94,7 +153,10 @@
                                   "ledState": document.getElementById('led').checked,
                                   "randomPattern": document.getElementById("randomPattern").checked,
                                   "patternNumber": document.getElementById('patternNumber').value,
-                                  "patternDelay": document.getElementById('patternDelay').value
+                                  "patternDelay": document.getElementById('patternDelay').value,
+                                  "patternColor": parseInt(document.getElementById('patternColor').value.substr(1), 16),
+                                  "startColor": parseInt(document.getElementById('startColor').value.substr(1), 16),
+                                  "endColor": parseInt(document.getElementById('endColor').value.substr(1), 16)
                                 });
     document.getElementById("save").disabled = true;
     websocket.send(jsonMsg);
@@ -108,6 +170,9 @@
   function toggleRandomPattern() {
     var randomPat = document.getElementById("randomPattern").checked;
     document.getElementById("patternNumber").disabled = randomPat;
+    if (randomPat) {
+      ledModeA();
+    }
     var jsonMsg = JSON.stringify({"msgType": "randomPattern", "state": randomPat});
     websocket.send(jsonMsg);
   }
@@ -124,7 +189,7 @@
   }
   function rot47(x) {
     var s = [];
-    for(var i = 0; (i < x.length); i++) {
+    for (var i = 0; (i < x.length); i++) {
       var j = x.charCodeAt(i);
       if ((j >= 33) && (j <= 126)) {
         s[i] = String.fromCharCode(33 + ((j + 14) % 94));

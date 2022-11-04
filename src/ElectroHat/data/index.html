@@ -52,7 +52,7 @@
       </div>
 
       <h3>LEDs</h3>
-      <div class ="center">
+      <div class="center">
         State: &nbsp <span id="ledState" style="color:blue"></span>
         <label class="switch">
           <input type="checkbox" onclick="toggleCheckbox(this)" id="led">
@@ -63,11 +63,19 @@
         Random Pattern:
         <input type="checkbox" id="randomPattern" name="randomPattern" onclick="toggleRandomPattern()">
         <br>
-        Pattern Number:
+        Pattern:
         <select id="patternNumber" name="patternNumber" onchange="setPattern()"></select>
         <br>
         Pattern Delay:
         <input type="range", id="patternDelay", min="1", max="1000", value="333" onchange="setPattern()"> &nbsp <span id="patDelay"></span>
+        <br>
+        Pattern Color:
+        <input type="color" id="patternColor" name="patternColor" onchange=setPattern()>
+        <div>
+          Start Color: <input type="color" id="startColor" name="startColor">
+          <br>
+          End Color: <input type="color" id="endColor" name="endColor">
+        </div>
       </div>
 
       <div class="vertical-center">
@@ -81,6 +89,7 @@
   </div>
 <script src="/scripts.js"></script>
 <script>
+  var patternNames = [%PATTERN_NAMES%];
   function initView() {
     var jsonMsg = JSON.stringify({"msgType": "query"});
     websocket.send(jsonMsg);
@@ -105,7 +114,7 @@
     for (var i = 0; i < %NUMBER_OF_PATTERNS%; i++) {
       var opt = document.createElement('option');
       opt.value = i;
-      opt.innerHTML = i;
+      opt.innerHTML = patternNames[i];
       select.appendChild(opt);
     }
     var wifiMode = "%WIFI_MODE%";
