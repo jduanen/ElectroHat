@@ -21,12 +21,14 @@
 #define CUSTOM              5
 #define NUM_PATTERNS        6
 
+#define MAX_PATTERNS        10
+
 
 uint32_t loopCnt = 0;
 
 NeoPixelRing ring = NeoPixelRing();
 
-char *names[LED_COUNT];
+char *namePtrs[MAX_PATTERNS];
 
 
 void setup() {
@@ -47,17 +49,21 @@ void setup() {
     Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
     ring.setColor(ring.makeColor(255, 0, 255));
     Serial.println("Selected Color: 0x" + String(ring.getColor(), HEX));
-    int n = ring.getNumPatterns();
-    Serial.println("Number of Patterns: " + String(n));
-`    if (numPatterns < 1) {
+    int num = ring.getNumPatterns();
+    Serial.println("Number of Patterns: " + String(num));
+    int numPatterns = ring.getPatternNames(namePtrs, MAX_PATTERNS);
+    if (numPatterns < 1) {
         Serial.println("getPatternNames failed");
     } else {
+        if (numPatterns != num) {
+            Serial.println("getPatternNames mismatch: " + String(numPatterns) + " != " + String(num));
+        }
         Serial.print("Pattern Names (" + String(numPatterns) + "): ");
         for (int i = 0; (i < numPatterns); i++) {
             if (i > 0) {
                 Serial.print(", ");
             }
-            Serial.print(names[i]);
+            Serial.print(namePtrs[i]);
         }
         Serial.println(".");
     }
@@ -65,7 +71,7 @@ void setup() {
     ring.enableCustomPixels(0xC003, ring.makeColor(255, 0, 255), ring.makeColor(255, 0, 255));
     ring.enableCustomPixels(0x003C, ring.makeColor(255, 0, 0), ring.makeColor(0, 255, 0));
     ring.enableCustomPixels(0x3C00, ring.makeColor(0, 255, 0), ring.makeColor(255, 0, 0));
-    n = ring.getEnabledCustomPixels();
+    int n = ring.getEnabledCustomPixels();
     Serial.println("Currently enabled Pixels: 0x" + String(n, HEX));
 
     ColorRange ranges[8] = {};
@@ -112,7 +118,7 @@ void loop() {
     if (false) {
         if ((loopCnt % 512) == 0) {
             p = (p + 1) % NUM_PATTERNS;
-            Serial.println("P: " + String(p) + ", Pattern: " + names[p] + ", Loop: " + String(loopCnt));
+            Serial.println("P: " + String(p) + ", Pattern: " + String(namePtrs[p]) + ", Loop: " + String(loopCnt));
             ring.clear();
             c += 1;
         }
