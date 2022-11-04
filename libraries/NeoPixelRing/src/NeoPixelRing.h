@@ -93,22 +93,22 @@ private:
 
     void _create(byte brightness);
 
+    void _rainbowMarquee();
+    void _rainbow();
     void _colorWipe();
     void _colorFill();
     void _marquee();
-    void _rainbowMarquee();
-    void _rainbow();
     void _custom();
 
     void _generateRandomPixel();
 
     //// FIXME
     const Patterns _patterns[_NUM_PATTERNS] = {
+        {PATTERN_FUNC(_rainbowMarquee), "Rainbow Marquee"},
+        {PATTERN_FUNC(_rainbow), "Rainbow"},
         {PATTERN_FUNC(_colorWipe), "Color Wipe"},
         {PATTERN_FUNC(_colorFill), "Color Fill"},
         {PATTERN_FUNC(_marquee), "Marquee"},
-        {PATTERN_FUNC(_rainbowMarquee), "Rainbow Marquee"},
-        {PATTERN_FUNC(_rainbow), "Rainbow"},
         {PATTERN_FUNC(_custom), "Custom"}
     };
 };

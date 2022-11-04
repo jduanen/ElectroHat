@@ -275,13 +275,11 @@ byte NeoPixelRing::getNumPatterns() {
 
 //// FIXME use the right kind of args to capture both dims
 byte NeoPixelRing::getPatternNames(char *namePtrs[], byte number) {
-    if (number < _NUM_PATTERNS) {
-        return -1;
-    }
-    for (int i = 0; (i < _NUM_PATTERNS); i++) {
+    int i;
+    for (i = 0; (i < min(number, _NUM_PATTERNS)); i++) {
         namePtrs[i] = _patterns[i].name;
     }
-    return _NUM_PATTERNS;
+    return i;
 };
 
 byte NeoPixelRing::getSelectedPattern() {
