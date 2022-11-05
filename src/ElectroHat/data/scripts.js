@@ -248,13 +248,20 @@ function clearCustomColors() {
   }
   setPattern();
 }
+function rgbToHex(r, g, b) {
+  return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+}
+function rgbToInt(r, g, b) {
+  return ?;
+}
 //// FIXME
 function getCustomColors() {
   var startColors = [];
   var endColors = [];
   var elems = document.getElementsByClassName('colorsButton');
   for (var i = 0; i < elems.length; i++) {
-    console.log("***: " + elems[i].style.background);
+    var s = elems[i].style.background.match(/\([0-9]+, [0-9]+, [0-9]+\)/g);
+    console.log("XXXX: " + rgbToHex.apply(null, s[0].split(",")) + ", " + rgbToHex.apply(null, s[1].split(",")));
   }
   return [startColors, endColors]
 }
