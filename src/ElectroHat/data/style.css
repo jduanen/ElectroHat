@@ -143,3 +143,17 @@ input:checked+.slider:before {
   background: #F5F5F5;
   color: #C3C3C3;
 }
+.colorsButton {
+  width:30px;
+  height:30px;
+  border:1px solid;
+  background: linear-gradient(to bottom, #808080 50%, #808080 50%);
+}
+.box{
+  width: 274px;
+  height: 233px;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+  position: relative;
+}

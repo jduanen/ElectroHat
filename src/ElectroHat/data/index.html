@@ -75,9 +75,30 @@
           Start Color: <input type="color" id="startColor" name="startColor">
           <br>
           End Color: <input type="color" id="endColor" name="endColor">
+        <br>
+        Bidirectional:
+        <input type="checkbox" id="customBidir" name="customBidir" onclick="setPattern()">
         </div>
+        <div class="box">
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="0"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="1"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="2"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="3"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="4"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="5"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="6"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="7"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="8"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="9"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="10"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="11"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="12"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="13"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="14"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="15"></button>
+        </div>
+        <button type="button" onclick="clearCustomColors()">Clear All</button>
       </div>
-
       <div class="vertical-center">
         <p><button class="green-button" id="save" onclick="saveConfiguration()">Save Configuration</button></p>
       </div>
@@ -93,26 +114,26 @@
   function initView() {
     var jsonMsg = JSON.stringify({"msgType": "query"});
     websocket.send(jsonMsg);
-    var select = document.getElementById('sequenceNumber');
+    var select = document.getElementById("sequenceNumber");
     var child = select.lastElementChild;
     while (child) {
       select.removeChild(child);
       child = select.lastElementChild;
     }
     for (var i = 0; i < %NUMBER_OF_SEQUENCES%; i++) {
-      var opt = document.createElement('option');
+      var opt = document.createElement("option");
       opt.value = i;
       opt.innerHTML = i;
       select.appendChild(opt);
     }
-    var select = document.getElementById('patternNumber');
+    var select = document.getElementById("patternNumber");
     var child = select.lastElementChild;
     while (child) {
       select.removeChild(child);
       child = select.lastElementChild;
     }
     for (var i = 0; i < %NUMBER_OF_PATTERNS%; i++) {
-      var opt = document.createElement('option');
+      var opt = document.createElement("option");
       opt.value = i;
       opt.innerHTML = patternNames[i];
       select.appendChild(opt);
@@ -122,12 +143,12 @@
       case "STA":
         var p1 = "<p><span class=\"staticStateName\">IP Address: </span><span class=\"staticStateValue\" id=\"ipAddr\">%IP_ADDR%</span></p>";
         var p2 = "<p><span class=\"staticStateName\">Connection: </span><span class=\"staticStateValue\" id=\"connection\">%SSID%</span></p>";
-        document.getElementById("wifiMode").insertAdjacentHTML('afterend', p1);
-        document.getElementById("ipAddr").insertAdjacentHTML('afterend', p2);
+        document.getElementById("wifiMode").insertAdjacentHTML("afterend", p1);
+        document.getElementById("ipAddr").insertAdjacentHTML("afterend", p2);
         break;
       case "A_P":
         var p1 = "<p><span class=\"staticStateName\">AP SSID: </span><span class=\"staticStateValue\" id=\"wifiApSsid\">%WIFI_AP_SSID%</span></p>";
-        document.getElementById("wifiMode").insertAdjacentHTML('afterend', p1);
+        document.getElementById("wifiMode").insertAdjacentHTML("afterend", p1);
         break;
       default:
         console.log("WARNING: invalid WIFI mode -- " + wifiMode);
