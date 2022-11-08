@@ -9,28 +9,46 @@
 *       (actually, it's slightly obfuscated, but essentially in the clear)
 *
 * WebSocket interface
-* - From client to server:
+* - initialization
+*   * server
+*     - has hard-coded defaults that get overridden by values in the local config file
+*     - initializes HW based on config values, then offers the web page and waits for WS messages
+*   * client
+*     - initializes GUI with default values, connects to server, and sends a "query" WS message
+*       * initView() gets called by onOpen() when "index.html" is opened
+*       * initView() is in "index.html" so that it can get compile-time constants
+*   * server
+*     - gets query WS message and sends the full config state to the client in a WS message
+*   * client
+*     - receives WS message from server and updates all the GUI elements with received data
+* - on GUI interactions
+*   * client
+*     - on click, update local GUI, and send a WS message with the update to the server
+*   * server
+*     - on receiving an update message, changes the HW, and updates the config state
+*       * on receipt of a "save" message, updates the config state, and write it to the local config file
+* - WS messages from client to server (full config state):
 *   * {"applName": <String>, "libVersion": <String>, "ipAddr": <String>,
 *      "ssid": <String>, "passwd": <String>, "RSSI": <Int>, "el": <Boolean>,
 *      "randomSequence": <Boolean>, "sequenceNumber": <Int>, "sequenceDelay": <Int>,
 *      "led": <Boolean>, "randomPattern": <Boolean>, "patternNumber": <Int>,
-*      "patternDelay": <Int>, "patternColor": <Int>, "customColors": [[<Int>,], [<Int>,]],
+*      "patternDelay": <Int>, "patternColor": <Int>, "customColors": [[<Int>,<Int>],...],
 *      "customBidir": <Boolean>, "customDelta": <Int>}
-* - From server to client:
+* - WS messages from server to client (dependent on what's clicked on the GUI):
 *   * {"msgType": "query"}
 *   * {"msgType": "el", "state": <Boolean>}
 *   * {"msgType": "sequence", "sequenceNumber": <Int>, "sequenceDelay": <Int>}
 *   * {"msgType": "randomSequence", "state": <Boolean>}
 *   * {"msgType": "led", "state": <Boolean>}
 *   * {"msgType": "pattern", "patternNumber": <Int>, "patternDelay": <Int>,
-*      "patternColor": <Int>,  "customColors": [[<Int>,], [<Int>,]],
-*      "customBidir": <Boolean>, "customDelta": <Int>}
+*      "patternColor": <Int>, "customBidir": <Boolean>, "customDelta": <Int>}
+*   * {"msgType": "customColors", "customColors": [[<Int>,<Int>],...]}
 *   * {"msgType": "randomPattern", "state": <Boolean>}
 *   * {"msgType": "saveConf", "ssid": document.getElementById("ssid").value,
 *      "passwd": <String>, "elState": <Boolean>, "randomSequence": <Boolean>,
 *      "sequenceNumber": <Int>, "sequenceDelay": <Int>, "ledState": <Boolean>,
 *      "randomPattern": <Boolean>, "patternNumber": <Int>, "patternDelay": <Int>,
-*      "patternColor": <Int>, "customColors": [[<Int>,], [<Int>,]],
+*      "patternColor": <Int>, "customColors": [[<Int>,<Int>],...],
 *      "customBidir": <Boolean>, "customDelta": <Int>}
 *   * {"msgType": "reboot"}
 *
@@ -87,7 +105,6 @@
 #define STARTUP_PATTERN_NUM     0
 #define STARTUP_PATTERN_DELAY   100
 #define STARTUP_PATTERN_COLOR   0xFFFFFF
-#define STARTUP_CUSTOM_COLORS   {{}, {}}
 #define STARTUP_CUSTOM_BIDIR    true
 #define STARTUP_CUSTOM_DELTA    64
 
@@ -106,7 +123,7 @@ typedef struct {
     unsigned short  patternNumber;
     uint32_t        patternDelay;
     uint32_t        patternColor;
-    uint32_t        customColors[2][32];
+    ColorRange      customColors[32];
     bool            customBidir;
     unsigned short  customDelta;
 } ConfigState;
@@ -125,7 +142,40 @@ ConfigState configState = {
     STARTUP_PATTERN_NUM,
     STARTUP_PATTERN_DELAY,
     STARTUP_PATTERN_COLOR,
-    STARTUP_CUSTOM_COLORS,
+    {
+        {0xff0000, 0x00ff00},
+        {0x00ff00, 0x0000ff},
+        {0xffff00, 0x00ffff},
+        {0xff00ff, 0x00ff00},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080},
+        {0x808080, 0x808080}
+    },
     STARTUP_CUSTOM_BIDIR,
     STARTUP_CUSTOM_DELTA
 };
@@ -202,6 +252,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         Serial.println("MSG:");
         serializeJsonPretty(wsMsg, Serial);
     }
+    // handle changes in GUI; update HW and reflect it in the configState
     String msgType = String(wsMsg["msgType"]);
     if (msgType.equalsIgnoreCase("query")) {
         // NOP
@@ -229,13 +280,20 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         configState.patternNumber = ring.getSelectedPattern();
         configState.patternDelay = ring.getDelay();
         configState.patternColor = ring.getColor();
-//        configState.customColors = wsMsg["customColors"];
         configState.customBidir = wsMsg["customBidir"];
         configState.customDelta = wsMsg["customDelta"];
+    } else if (msgType.equalsIgnoreCase("customColors")) {
+        //// FIXME
+        uint32_t cc[2][32];
+        copyArray(wsMsg["customColors"], cc);
+//        updateCustomColors(wsMsg["customColors"].as<JsonArray>());
+        ws2CustomColors(configState.customColors, wsMsg["customColors"]);  //// FIXME
+//        copyArray(wsMsg["customColors"], configState.customColors);
     } else if (msgType.equalsIgnoreCase("randomPattern")) {
         ring.enableRandomPattern(wsMsg["state"]);
         configState.randomPattern = wsMsg["state"];
     } else if (msgType.equalsIgnoreCase("saveConf")) {
+        //// TODO just load from wsMsg to configState struct and then use it to load the cs.configJsonDoc -- or the converse
         String ssidStr = String(wsMsg["ssid"]);
         configState.ssid = ssidStr;
         cs.configJsonDoc["ssid"] = ssidStr;
@@ -262,8 +320,12 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         cs.configJsonDoc["patternDelay"] = wsMsg["patternDelay"];
         configState.patternColor = wsMsg["patternColor"];
         cs.configJsonDoc["patternColor"] = wsMsg["patternColor"];
-//        configState.customColors = wsMsg["customColors"];
-//        cs.configJsonDoc["customColors"] = wsMsg["customColors"];
+//        ws2CustomColors(configState.customColors, wsMsg["customColors"]);  //// FIXME
+//        copyArray(wsMsg["customColors"], configState.customColors);
+        //// FIXME
+        uint32_t cc[2][32];
+        copyArray(wsMsg["customColors"], cc);
+        cs.configJsonDoc["customColors"] = wsMsg["customColors"];
         configState.customBidir = wsMsg["customBidir"];
         cs.configJsonDoc["customBidir"] = wsMsg["customBidir"];
         configState.customDelta = wsMsg["customDelta"];
@@ -275,6 +337,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         reboot();
     }
 
+    // send contents of configState (which should reflect the state of the HW)
     String msg = ", \"libVersion\": \"" + webSvcs.libVersion + "\"";
     msg += ", \"ipAddr\": \"" + WiFi.localIP().toString() + "\"";
     msg += ", \"ssid\": \"" + configState.ssid + "\"";
@@ -289,7 +352,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg += ", \"patternNumber\": " + String(configState.patternNumber);
     msg += ", \"patternDelay\": " + String(configState.patternDelay);
     msg += ", \"patternColor\": " + String(configState.patternColor);
-//    msg += ", \"customColors\": " + String(configState.customColors);
+    msg += ", \"customColors\": " + customColors2Str(configState.customColors);  //// FIXME
     msg += ", \"customBidir\": " + String(configState.customBidir);
     msg += ", \"customDelta\": " + String(configState.customDelta);
     Serial.println(msg);  //// TMP TMP TMP
@@ -304,6 +367,52 @@ WebPageDef webPage = {
     webpageMsgHandler
 };
 
+//void updateCustomColors(ColorRange customColors[]) {
+void updateCustomColors(JsonArray c) {
+    for (int i = 0; (i < 32); i++) {
+//        ring.enableCustomPixels((1 << i), customColors[i].startColor, customColors[i].endColor);
+        ring.enableCustomPixels((1 << i), c[i][0], c[i][1]);
+    }
+}
+
+void ws2CustomColors(ColorRange customColors[], String customColorsStr) {
+    //// FIXME
+    Serial.println(customColorsStr);
+};
+
+/*
+void str2CustomColors(ColorRange customColors[], String customColorsStr) {
+    //// FIXME convert strings into array of ColorRange (tuple of ints)
+    Serial.println(customColorsStr);
+    m = customColorsStr.match(/^\[(0x[0-9a-fA-F]{2})\]$/i);
+    for (int i = 0; (i < 32); i++) {
+        
+    }
+};
+*/
+
+void json2CustomColors(ColorRange customColors[], JsonArray colorRangesArr) {
+    for (JsonVariant v : colorRangesArr) {
+        serializeJson(v, Serial);
+    }
+}
+
+void customColors2Json(JsonArray colorRangesArr, ColorRange customColors[]) {
+    Serial.println("TBD");  //// FIXME
+}
+
+
+String customColors2Str(ColorRange customColors[]) {
+    String ccStr = "[";
+    for (int i = 0; (i < 32); i++) {
+        if (i != 0) {
+            ccStr += ",";
+        }
+        ccStr += "[" + String(customColors[i].startColor) + "," +  String(customColors[i].endColor) + "]";
+    }
+    ccStr += "]";
+    return ccStr;
+};
 
 void config() {
     bool dirty = false;
@@ -356,10 +465,10 @@ void config() {
         cs.configJsonDoc["patternColor"] = configState.patternColor;
         dirty = true;
     }
-//    if (!VALID_ENTRY(cs.configJsonDoc, "customColors")) {
-//        cs.configJsonDoc["customColors"] = configState.customColors;
-//        dirty = true;
-//    }
+    if (!VALID_ENTRY(cs.configJsonDoc, "customColors")) {
+        customColors2Json(cs.configJsonDoc["customColors"], configState.customColors);  //// FIXME
+        dirty = true;
+    }
     if (!VALID_ENTRY(cs.configJsonDoc, "customBidir")) {
         cs.configJsonDoc["customBidir"] = configState.customBidir;
         dirty = true;
@@ -384,8 +493,7 @@ void config() {
     configState.patternNumber = cs.configJsonDoc["patternNumber"].as<unsigned int>();
     configState.patternDelay = cs.configJsonDoc["patternDelay"].as<unsigned int>();
     configState.patternColor = cs.configJsonDoc["patternColor"].as<unsigned int>();
-    //// FIXME
-////    configState.customColors = cs.configJsonDoc["customColors"].as<>();
+    json2CustomColors(configState.customColors, cs.configJsonDoc["customColors"].as<JsonArray>());  //// FIXME
     configState.customBidir = cs.configJsonDoc["customBidir"].as<bool>();
     configState.customDelta = cs.configJsonDoc["customDelta"].as<unsigned int>();
     if (VERBOSE) {
