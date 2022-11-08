@@ -80,22 +80,22 @@
         <input type="checkbox" id="customBidir" name="customBidir" onclick="setPattern()">
         </div>
         <div class="box">
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="0"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="1"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="2"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="3"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="4"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="5"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="6"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="7"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="8"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="9"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="10"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="11"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="12"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="13"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="14"></button>
-          <button class="colorsButton" onclick=colorsButtonClick(this) name="15"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb0" id="cb0"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb1" id="cb1"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb2" id="cb2"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb3" id="cb3"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb4" id="cb4"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb5" id="cb5"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb6" id="cb6"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb7" id="cb7"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb8" id="cb8"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb9" id="cb9"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb10" id="cb10"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb11" id="cb11"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb12" id="cb12"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb13" id="cb13"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb14" id="cb14"></button>
+          <button class="colorsButton" onclick=colorsButtonClick(this) name="cb15" id="cb15"></button>
         </div>
         <button type="button" onclick="clearCustomColors()">Clear All</button>
       </div>
@@ -112,8 +112,6 @@
 <script>
   var patternNames = [%PATTERN_NAMES%];
   function initView() {
-    var jsonMsg = JSON.stringify({"msgType": "query"});
-    websocket.send(jsonMsg);
     var select = document.getElementById("sequenceNumber");
     var child = select.lastElementChild;
     while (child) {
@@ -153,5 +151,10 @@
       default:
         console.log("WARNING: invalid WIFI mode -- " + wifiMode);
     }
+    positionCustomColorButtons();
+    clearCustomColors();
+
+    var jsonMsg = JSON.stringify({"msgType": "query"});
+    websocket.send(jsonMsg);
   }
 </script>
