@@ -1,1 +1,33 @@
-{}
+{
+  "ssid": "Linksys49812",
+  "passwd": "$9:E%9:DuF4<a",
+  "elState": true,
+  "randomSequence": false,
+  "sequenceNumber": 5,
+  "sequenceDelay": 75,
+  "ledState": true,
+  "randomPattern": false,
+  "patternNumber": false,
+  "patternDelay": 100,
+  "patternColor": 16777215,
+  "customColors": [
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504],
+    [8421504, 8421504]
+  ],
+  "customBidir": true,
+  "customDelta": 64
+}

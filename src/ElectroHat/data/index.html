@@ -97,7 +97,7 @@
           <button class="colorsButton" onclick=colorsButtonClick(this) name="cb14" id="cb14"></button>
           <button class="colorsButton" onclick=colorsButtonClick(this) name="cb15" id="cb15"></button>
         </div>
-        <button type="button" onclick="clearCustomColors()">Clear All</button>
+        <button type="button" onclick="clearCustomColors()" name="clearAll" id="clearAll">Clear All</button>
       </div>
       <div class="vertical-center">
         <p><button class="green-button" id="save" onclick="saveConfiguration()">Save Configuration</button></p>
@@ -111,6 +111,8 @@
 <script src="/scripts.js"></script>
 <script>
   var patternNames = [%PATTERN_NAMES%];
+  var patternMinDelays = [%PATTERN_MIN_DELAYS%];
+  var patternMaxDelays = [%PATTERN_MAX_DELAYS%];
   function initView() {
     var select = document.getElementById("sequenceNumber");
     var child = select.lastElementChild;

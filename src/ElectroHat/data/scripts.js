@@ -24,7 +24,7 @@ function onMessage(event) {
   var state;
   var elem;
   const msgObj = JSON.parse(event.data);
-  console.log("msgObj: " + JSON.stringify(msgObj));
+//  console.log("msgObj: " + JSON.stringify(msgObj));
 
   document.getElementById('ssid').value = msgObj.ssid;
 
@@ -62,6 +62,8 @@ function onMessage(event) {
   elem = document.getElementById('patternDelay');
   elem.value = msgObj.patternDelay;
   document.getElementById('patDelay').innerHTML = parseInt(msgObj.patternDelay);
+  elem.min = patternMinDelays[msgObj.patternNumber];
+  elem.max = patternMaxDelays[msgObj.patternNumber];
 
   elem = document.getElementById('patternColor');
   elem.value = "#" + (msgObj.patternColor).toString(16);
@@ -95,24 +97,39 @@ function disableCustomColors(enb) {
   }
 }
 function ledModeA() {
-  //// disable: patternColor, startColor, endColor, colorBoxes; enable: patternDelay
+  //// disable: patternColor, startColor, endColor, colorBoxes, clearAll; enable: patternDelay
   document.getElementById('patternColor').disabled = true;
+  document.getElementById('patternDelay').disabled = false;
   document.getElementById('startColor').disabled = true;
   document.getElementById('endColor').disabled = true;
+  document.getElementById('clearAll').disabled = true;
   disableCustomColors(true);
 }
 function ledModeB() {
-  //// disable: startColor, endColor, colorBoxes; enable: patternDelay, patternColor
+  //// disable: patternDelay, startColor, endColor, colorBoxes, clearAll; enable: patternColor
   document.getElementById('patternColor').disabled = false;
+  document.getElementById('patternDelay').disabled = true;
   document.getElementById('startColor').disabled = true;
   document.getElementById('endColor').disabled = true;
+  document.getElementById('clearAll').disabled = true;
   disableCustomColors(true);
 }
 function ledModeC() {
-  //// disable: patternColor; enable: patternDelay, startColor, endColor, colorBoxes
+  //// disable: startColor, endColor, colorBoxes, clearAll; enable: patternDelay, patternColor
+  document.getElementById('patternColor').disabled = false;
+  document.getElementById('patternDelay').disabled = false;
+  document.getElementById('startColor').disabled = true;
+  document.getElementById('endColor').disabled = true;
+  document.getElementById('clearAll').disabled = true;
+  disableCustomColors(true);
+}
+function ledModeD() {
+  //// disable: patternColor; enable: patternDelay, startColor, endColor, colorBoxes, clearAll
   document.getElementById('patternColor').disabled = true;
+  document.getElementById('patternDelay').disabled = false;
   document.getElementById('startColor').disabled = false;
   document.getElementById('endColor').disabled = false;
+  document.getElementById('clearAll').disabled = false;
   disableCustomColors(false);
 }
 function enableModes() {
@@ -127,16 +144,16 @@ function enableModes() {
         ledModeA();
         break;
       case "Color Wipe":
-        ledModeB();
+        ledModeC();
         break;
       case "Color Fill":
         ledModeB();
         break;
       case "Marquee":
-        ledModeB();
+        ledModeC();
         break;
       case "Custom":
-        ledModeC();
+        ledModeD();
         break;
       default:
         console.log("Unknown pattern: " + patternNames[patNum]);
@@ -145,7 +162,10 @@ function enableModes() {
 }
 function setPattern() {
   var patNum = document.getElementById('patternNumber').value;
-  var patDelay = document.getElementById('patternDelay').value;
+  var elem = document.getElementById('patternDelay');
+  var patDelay = elem.value;
+  elem.min = patternMinDelays[patNum];
+  elem.max = patternMaxDelays[patNum];
   var patColor = parseInt(document.getElementById('patternColor').value.substr(1), 16);
   var custBidir = document.getElementById('customBidir').value;
   var jsonMsg = JSON.stringify({'msgType': 'pattern',
@@ -154,7 +174,6 @@ function setPattern() {
                                 'patternColor': patColor,
                                 'customBidir': custBidir
                               });
-  console.log("!!!!" + jsonMsg);
   websocket.send(jsonMsg);
   enableModes();
 }
@@ -260,7 +279,7 @@ function getCustomColors() {
     }
     var s = [];
     for (m of btn.style.background.matchAll(/rgb\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g)) {
-      s.push(rgbToHex(m[0], m[1], m[2]));
+      s.push(rgbToInt(m[1], m[2], m[3]));
     }
     customColors.push(s);
   }
