@@ -98,39 +98,31 @@ function disableCustomColors(enb) {
 }
 function ledModeA() {
   //// disable: patternColor, startColor, endColor, colorBoxes, clearAll; enable: patternDelay
-  document.getElementById('patternColor').disabled = true;
-  document.getElementById('patternDelay').disabled = false;
-  document.getElementById('startColor').disabled = true;
-  document.getElementById('endColor').disabled = true;
-  document.getElementById('clearAll').disabled = true;
-  disableCustomColors(true);
+  document.getElementById('patternColorDiv').style.visibility = "hidden";
+  document.getElementById('patternDelayDiv').style.visibility = "visible";
+  document.getElementById('customPatternDiv').style.visibility = "hidden";
+//  disableCustomColors(true);
 }
 function ledModeB() {
   //// disable: patternDelay, startColor, endColor, colorBoxes, clearAll; enable: patternColor
-  document.getElementById('patternColor').disabled = false;
-  document.getElementById('patternDelay').disabled = true;
-  document.getElementById('startColor').disabled = true;
-  document.getElementById('endColor').disabled = true;
-  document.getElementById('clearAll').disabled = true;
-  disableCustomColors(true);
+  document.getElementById('patternColorDiv').style.visibility = "visible";
+  document.getElementById('patternDelayDiv').style.visibility = "hidden";
+  document.getElementById('customPatternDiv').style.visibility = "hidden";
+//  disableCustomColors(true);
 }
 function ledModeC() {
   //// disable: startColor, endColor, colorBoxes, clearAll; enable: patternDelay, patternColor
-  document.getElementById('patternColor').disabled = false;
-  document.getElementById('patternDelay').disabled = false;
-  document.getElementById('startColor').disabled = true;
-  document.getElementById('endColor').disabled = true;
-  document.getElementById('clearAll').disabled = true;
-  disableCustomColors(true);
+  document.getElementById('patternColorDiv').style.visibility = "visible";
+  document.getElementById('patternDelayDiv').style.visibility = "visible";
+  document.getElementById('customPatternDiv').style.visibility = "hidden";
+//  disableCustomColors(true);
 }
 function ledModeD() {
   //// disable: patternColor; enable: patternDelay, startColor, endColor, colorBoxes, clearAll
-  document.getElementById('patternColor').disabled = true;
-  document.getElementById('patternDelay').disabled = false;
-  document.getElementById('startColor').disabled = false;
-  document.getElementById('endColor').disabled = false;
-  document.getElementById('clearAll').disabled = false;
-  disableCustomColors(false);
+  document.getElementById('patternColorDiv').style.visibility = "hidden";
+  document.getElementById('patternDelayDiv').style.visibility = "visible";
+  document.getElementById('customPatternDiv').style.visibility = "visible";
+//  disableCustomColors(false);
 }
 function enableModes() {
   if (document.getElementById('randomPattern').checked) {
