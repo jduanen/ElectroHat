@@ -107,10 +107,10 @@ private:
 
     Patterns _patterns[_NUM_PATTERNS] = {
         {PATTERN_FUNC(_rainbowMarquee), (char *)"Rainbow Marquee", 1, 300},
-        {PATTERN_FUNC(_rainbow), (char *)"Rainbow", 1, 100},
+        {PATTERN_FUNC(_rainbow), (char *)"Rainbow", 1, 50},
         {PATTERN_FUNC(_colorWipe), (char *)"Color Wipe", 30, 300},
         {PATTERN_FUNC(_colorFill), (char *)"Color Fill", 0, 0},
-        {PATTERN_FUNC(_marquee), (char *)"Marquee", 1, 150},
+        {PATTERN_FUNC(_marquee), (char *)"Marquee", 10, 150},
         {PATTERN_FUNC(_custom), (char *)"Custom", 1, 400}
     };
 };
