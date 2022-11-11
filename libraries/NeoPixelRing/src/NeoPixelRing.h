@@ -18,14 +18,16 @@
 #define UNUSED_ANALOG       A0
 #endif /* UNUSED_ANALOG */
 
-#define PATTERN_FUNC(func)  [](NeoPixelRing* npr) { return npr->func();}
+#define PATTERN_FUNC(func)  [](NeoPixelRing* npr) {return npr->func();}
 
 class NeoPixelRing;
 using PatternFunc = void (*)(NeoPixelRing*);
 
 typedef struct {
     PatternFunc func;
-    char *name;
+    char        *name;
+    uint16_t    minDelay;
+    uint16_t    maxDelay;
 } Patterns;
 
 typedef struct {
@@ -59,6 +61,7 @@ public:
     uint32_t getDelay();
     byte getNumPatterns();
     byte getPatternNames(char *namePtrs[], byte number);
+    void getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], byte number);
     byte getSelectedPattern();
     bool selectPattern(byte patternNum);
     bool randomPattern();
@@ -102,14 +105,13 @@ private:
 
     void _generateRandomPixel();
 
-    //// FIXME
-    const Patterns _patterns[_NUM_PATTERNS] = {
-        {PATTERN_FUNC(_rainbowMarquee), "Rainbow Marquee"},
-        {PATTERN_FUNC(_rainbow), "Rainbow"},
-        {PATTERN_FUNC(_colorWipe), "Color Wipe"},
-        {PATTERN_FUNC(_colorFill), "Color Fill"},
-        {PATTERN_FUNC(_marquee), "Marquee"},
-        {PATTERN_FUNC(_custom), "Custom"}
+    Patterns _patterns[_NUM_PATTERNS] = {
+        {PATTERN_FUNC(_rainbowMarquee), (char *)"Rainbow Marquee", 1, 300},
+        {PATTERN_FUNC(_rainbow), (char *)"Rainbow", 1, 100},
+        {PATTERN_FUNC(_colorWipe), (char *)"Color Wipe", 30, 300},
+        {PATTERN_FUNC(_colorFill), (char *)"Color Fill", 0, 0},
+        {PATTERN_FUNC(_marquee), (char *)"Marquee", 1, 150},
+        {PATTERN_FUNC(_custom), (char *)"Custom", 1, 400}
     };
 };
 

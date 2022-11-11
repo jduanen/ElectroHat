@@ -85,6 +85,8 @@ void NeoPixelRing::getCustomPixels(uint32_t pixels, ColorRange colorRanges[], in
         if (pixels & (1 << i)) {
             assert(n < size);
             colorRanges[n] = _colorRanges[i];
+//            Serial.println("$$: " + String(n) + ", 0x" + String(colorRanges[n].startColor, HEX) + "0x" + String(colorRanges[n].endColor, HEX));
+            n += 1;
         }
     }
 };
@@ -99,7 +101,8 @@ void NeoPixelRing::disableCustomPixels(uint32_t pixels) {
 //  cycled between.
 // Give a bit-vector where a 1 means to disable the corresponding pixel.
 void NeoPixelRing::enableCustomPixels(uint32_t pixels, uint32_t startColor, uint32_t endColor) {
-    for (int i = 0; (i < 32); i++) {
+    assert(_ring->numPixels() < 32);
+    for (int i = 0; (i < _ring->numPixels()); i++) {
         if (pixels & (1 << i)) {
             _colorRanges[i].startColor = startColor;
             _colorRanges[i].endColor = endColor;
@@ -275,11 +278,23 @@ byte NeoPixelRing::getNumPatterns() {
 
 //// FIXME use the right kind of args to capture both dims
 byte NeoPixelRing::getPatternNames(char *namePtrs[], byte number) {
-    int i;
+    int i = 0;
     for (i = 0; (i < min(number, _NUM_PATTERNS)); i++) {
         namePtrs[i] = _patterns[i].name;
     }
     return i;
+};
+
+//// FIXME use the right kind of args to capture both dims
+void NeoPixelRing::getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], byte number) {
+    for (int i = 0; (i < min(number, _NUM_PATTERNS)); i++) {
+        if (minDelays != NULL) {
+            minDelays[i] = _patterns[i].minDelay;
+        }
+        if (maxDelays != NULL) {
+            maxDelays[i] = _patterns[i].maxDelay;
+        }
+    }
 };
 
 byte NeoPixelRing::getSelectedPattern() {
