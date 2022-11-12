@@ -72,6 +72,8 @@ function onMessage(event) {
 
   document.getElementById('customBidir').checked = (msgObj.customBidir == "true");
 
+  customDelta = parseInt(msgObj.customDelta);
+
   document.getElementById('save').disabled = false;
 
   enableModes();
@@ -164,7 +166,8 @@ function setPattern() {
                                 'patternNumber': patNum,
                                 'patternDelay': patDelay,
                                 'patternColor': patColor,
-                                'customBidir': custBidir
+                                'customBidir': custBidir,
+                                'customDelta': customDelta
                               });
   websocket.send(jsonMsg);
   enableModes();
@@ -183,7 +186,8 @@ function saveConfiguration() {
                                 'patternDelay': document.getElementById('patternDelay').value,
                                 'patternColor': parseInt(document.getElementById('patternColor').value.substr(1), 16),
                                 'customColors': getCustomColors(),
-                                'customBidir': document.getElementById('customBidir').checked
+                                'customBidir': document.getElementById('customBidir').checked,
+                                'customDelta': customDelta
                               });
   document.getElementById('save').disabled = true;
   websocket.send(jsonMsg);
