@@ -51,12 +51,13 @@ public:
 
     NeoPixelRing();
     NeoPixelRing(byte numLeds);
-    NeoPixelRing(byte brightness);
     NeoPixelRing(byte numLeds, byte brightness);
     void test(byte test);
     void clear();
     unsigned long run();
     byte getNumLeds();
+    void setBrightness(byte brightness);
+    byte getBrightness();
     uint32_t makeColor(byte r, byte g, byte b);
     void setColor(uint32_t color);
     uint32_t getColor();
@@ -84,6 +85,7 @@ private:
 
     static byte const _NUM_PATTERNS = 6;    //// FIXME
     byte _numLeds = DEF_NUM_LEDS;
+    byte _brightness = DEF_LED_BRIGHTNESS;
     byte _pixelNum = 0;
     uint32_t _color = 0x000000;
     uint32_t _patternDelay = 0;
@@ -97,7 +99,7 @@ private:
     bool _customBidir = false;
     bool _randomPattern = false;
 
-    void _create(byte brightness);
+    void _create(byte numLeds, byte brightness);
 
     void _rainbowMarquee();
     void _rainbow();

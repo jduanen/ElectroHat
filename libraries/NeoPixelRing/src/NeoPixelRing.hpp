@@ -10,10 +10,6 @@ NeoPixelRing::NeoPixelRing(byte numLeds) {
     _create(numLeds, DEF_LED_BRIGHTNESS);
 };
 
-NeoPixelRing::NeoPixelRing(byte brightness) {
-    _create(DEF_NUM_LEDS, brightness);
-};
-
 NeoPixelRing::NeoPixelRing(byte numLeds, byte brightness) {
     _create(numLeds, brightness);
 };
@@ -22,6 +18,7 @@ void NeoPixelRing::_create(byte numLeds, byte brightness) {
     assert(_ring->numPixels() < 32);
     assert(numLeds < 32);
     _numLeds = numLeds;
+    _brightness = brightness;
     _ring->begin();
     _ring->clear();
     _ring->show();  // turn off all pixels
@@ -34,6 +31,15 @@ void NeoPixelRing::_create(byte numLeds, byte brightness) {
 
 byte getNumLeds() {
     return _numLeds;
+}
+
+void setBrightness(byte brightness) {
+    _brightness = brightness;
+    _ring->setBrightness(brihtness);
+}
+
+byte getBrightness() {
+    return _brightness;
 }
 
 void NeoPixelRing::test(byte test) {
