@@ -3,14 +3,25 @@
 */
 
 NeoPixelRing::NeoPixelRing() {
-    _create(DEF_LED_BRIGHTNESS);
+    _create(DEF_NUM_LEDS, DEF_LED_BRIGHTNESS);
+};
+
+NeoPixelRing::NeoPixelRing(byte numLeds) {
+    _create(numLeds, DEF_LED_BRIGHTNESS);
 };
 
 NeoPixelRing::NeoPixelRing(byte brightness) {
-    _create(brightness);
+    _create(DEF_NUM_LEDS, brightness);
 };
 
-void NeoPixelRing::_create(byte brightness) {
+NeoPixelRing::NeoPixelRing(byte numLeds, byte brightness) {
+    _create(numLeds, brightness);
+};
+
+void NeoPixelRing::_create(byte numLeds, byte brightness) {
+    assert(_ring->numPixels() < 32);
+    assert(numLeds < 32);
+    _numLeds = numLeds;
     _ring->begin();
     _ring->clear();
     _ring->show();  // turn off all pixels
@@ -20,6 +31,10 @@ void NeoPixelRing::_create(byte brightness) {
     // use floating input as source of randomness
     randomSeed(analogRead(UNUSED_ANALOG));
 };
+
+byte getNumLeds() {
+    return _numLeds;
+}
 
 void NeoPixelRing::test(byte test) {
     uint32_t c;
@@ -101,8 +116,7 @@ void NeoPixelRing::disableCustomPixels(uint32_t pixels) {
 //  cycled between.
 // Give a bit-vector where a 1 means to disable the corresponding pixel.
 void NeoPixelRing::enableCustomPixels(uint32_t pixels, uint32_t startColor, uint32_t endColor) {
-    assert(_ring->numPixels() < 32);
-    for (int i = 0; (i < _ring->numPixels()); i++) {
+    for (int i = 0; (i < _numLeds); i++) {
         if (pixels & (1 << i)) {
             _colorRanges[i].startColor = startColor;
             _colorRanges[i].endColor = endColor;
@@ -114,7 +128,7 @@ void NeoPixelRing::enableCustomPixels(uint32_t pixels, uint32_t startColor, uint
 // Fill all pixels with the selected color
 // Doesn't clear the pixels first.
 void NeoPixelRing::fill(uint32_t color) {
-    _ring->fill(color, 0, _ring->numPixels());
+    _ring->fill(color, 0, _numLeds);
     _ring->show();
 };
 
@@ -133,7 +147,7 @@ void NeoPixelRing::_colorWipe() {
 // Fill all pixels with the selected color
 // Doesn't clear the pixels first.
 void NeoPixelRing::_colorFill() {
-    _ring->fill(_color, 0, _ring->numPixels());
+    _ring->fill(_color, 0, _numLeds);
     _ring->show();
     _nextRunTime = millis() + _patternDelay;
 };
@@ -141,7 +155,7 @@ void NeoPixelRing::_colorFill() {
 // Movie-marquee-like chasing rainbow lights in the selected color
 void NeoPixelRing::_marquee() {
     _ring->clear();
-    int n = _ring->numPixels();
+    int n = _numLeds;
     for (int i = (_loopCnt % 3); (i < n); i += 3) {
         _ring->setPixelColor(i, _color);
         _ring->show();
@@ -154,7 +168,7 @@ void NeoPixelRing::_marquee() {
 void NeoPixelRing::_rainbowMarquee() {
     _nextRunTime = millis() + _patternDelay;
     _ring->clear();
-    int n = _ring->numPixels();
+    int n = _numLeds;
     for (int i = (_loopCnt % 3); (i < n); i += 3) {
         int hue = _firstPixelHue + i * 65536L / n;
         uint32_t rgbColor = _ring->gamma32(_ring->ColorHSV(hue));
@@ -243,12 +257,12 @@ unsigned long NeoPixelRing::run() {
         _patterns[_patternNum].func(this);
     }
     _loopCnt += 1;
-    _pixelNum = _loopCnt % _ring->numPixels();
+    _pixelNum = _loopCnt % _numLeds;
     return 0L;
 };
 
 void NeoPixelRing::_generateRandomPixel() {
-    _ring->setPixelColor(random(0, _ring->numPixels()),
+    _ring->setPixelColor(random(0, _numLeds),
                          random(0, 0xFF), random(0, 0xFF), random(0, 0xFF));
     _ring->show();
     _nextRunTime = millis() + _patternDelay;

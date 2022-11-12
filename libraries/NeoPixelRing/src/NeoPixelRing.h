@@ -11,7 +11,7 @@
 #define NEO_PIXEL_RING_VERSION  "1.0"
 
 #define LED_PIN             15
-#define LED_COUNT           16
+#define DEF_NUM_LEDS        16
 #define DEF_LED_BRIGHTNESS  50  // max = 255
 
 #ifndef UNUSED_ANALOG
@@ -50,10 +50,13 @@ public:
     };
 
     NeoPixelRing();
+    NeoPixelRing(byte numLeds);
     NeoPixelRing(byte brightness);
+    NeoPixelRing(byte numLeds, byte brightness);
     void test(byte test);
     void clear();
     unsigned long run();
+    byte getNumLeds();
     uint32_t makeColor(byte r, byte g, byte b);
     void setColor(uint32_t color);
     uint32_t getColor();
@@ -80,7 +83,7 @@ private:
     Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
     static byte const _NUM_PATTERNS = 6;    //// FIXME
-
+    byte _numLeds = DEF_NUM_LEDS;
     byte _pixelNum = 0;
     uint32_t _color = 0x000000;
     uint32_t _patternDelay = 0;
