@@ -103,6 +103,8 @@ private:
     void _marquee();
     void _custom();
 
+    void _splitColor(byte *rPtr, byte *gPtr, byte *bPtr, uint32_t c);
+
     void _generateRandomPixel();
 
     Patterns _patterns[_NUM_PATTERNS] = {

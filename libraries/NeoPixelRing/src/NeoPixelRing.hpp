@@ -193,29 +193,32 @@ void NeoPixelRing::setCustomBidir(bool bidir) {
     _customBidir = bidir;
 };
 
+void NeoPixelRing::_splitColor(byte *rPtr, byte *gPtr, byte *bPtr, uint32_t c) {
+    *rPtr = ((c >> 16) & 0xFF);
+    *gPtr = ((c >> 8) & 0xFF);
+    *bPtr = (c & 0xFF);
+};
+
 // Cycle pixels between a pair of colors.
 void NeoPixelRing::_custom() {
+    int incr;
+    byte sR, sG, sB, eR, eG, eB, r, g, b;
     _ring->clear();
     for (int i = 0; (i < 32); i++) {
-        if (_customPixelEnables & (1 << i)) {
-            byte sR = ((_colorRanges[i].startColor >> 16) & 0xFF);
-            byte sG = ((_colorRanges[i].startColor >> 8) & 0xFF);
-            byte sB = (_colorRanges[i].startColor & 0xFF);
-            byte eR = ((_colorRanges[i].endColor >> 16) & 0xFF);
-            byte eG = ((_colorRanges[i].endColor >> 8) & 0xFF);
-            byte eB = (_colorRanges[i].endColor & 0xFF);
-            int incr;
+        if ((_customPixelEnables & (1 << i)) != 0) {
+            _splitColor(&sR, &sG, &sB, _colorRanges[i].startColor);
+            _splitColor(&eR, &eG, &eB, _colorRanges[i].endColor);
             if (_customBidir == true) {
-                incr = _loopCnt % (_customDelta * 2);
+                incr = _loopCnt % ((_customDelta + 1) * 2);
                 if (incr >= _customDelta) {
-                    incr = ((_customDelta * 2) - 1) - incr;
+                    incr = (((_customDelta + 1) * 2) - 1) - incr;
                 }
             } else {
-                incr = _loopCnt % _customDelta;
+                incr = _loopCnt % (_customDelta + 1);
             }
-            byte r = sR + (((eR - sR) * incr) / _customDelta);
-            byte g = sG + (((eG - sG) * incr) / _customDelta);
-            byte b = sB + (((eB - sB) * incr) / _customDelta);
+            r = sR + (((eR - sR) * incr) / _customDelta);
+            g = sG + (((eG - sG) * incr) / _customDelta);
+            b = sB + (((eB - sB) * incr) / _customDelta);
             _ring->setPixelColor(i, r, g, b);
         }
     }
