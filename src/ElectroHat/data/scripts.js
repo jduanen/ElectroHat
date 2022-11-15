@@ -99,36 +99,48 @@ function disableCustomColors(enb) {
   }
 }
 function ledModeA() {
-  //// disable: patternColor, startColor, endColor, colorBoxes, clearAll; enable: patternDelay
+  //// disable: patternColor, startColor, endColor, colorBoxes, clearAll; enable: patternNumber, patternDelay
+  document.getElementById('patternNumberDiv').style.visibility = "visible";
   document.getElementById('patternColorDiv').style.visibility = "hidden";
   document.getElementById('patternDelayDiv').style.visibility = "visible";
   document.getElementById('customPatternDiv').style.visibility = "hidden";
 //  disableCustomColors(true);
 }
 function ledModeB() {
-  //// disable: patternDelay, startColor, endColor, colorBoxes, clearAll; enable: patternColor
+  //// disable: patternDelay, startColor, endColor, colorBoxes, clearAll; enable: patternNumber, patternColor
+  document.getElementById('patternNumberDiv').style.visibility = "visible";
   document.getElementById('patternColorDiv').style.visibility = "visible";
   document.getElementById('patternDelayDiv').style.visibility = "hidden";
   document.getElementById('customPatternDiv').style.visibility = "hidden";
 //  disableCustomColors(true);
 }
 function ledModeC() {
-  //// disable: startColor, endColor, colorBoxes, clearAll; enable: patternDelay, patternColor
+  //// disable: startColor, endColor, colorBoxes, clearAll; enable: patternNumber, patternDelay, patternColor
+  document.getElementById('patternNumberDiv').style.visibility = "visible";
   document.getElementById('patternColorDiv').style.visibility = "visible";
   document.getElementById('patternDelayDiv').style.visibility = "visible";
   document.getElementById('customPatternDiv').style.visibility = "hidden";
 //  disableCustomColors(true);
 }
 function ledModeD() {
-  //// disable: patternColor; enable: patternDelay, startColor, endColor, colorBoxes, clearAll
+  //// disable: patternColor; enable: patternNumber, patternDelay, startColor, endColor, colorBoxes, clearAll
+  document.getElementById('patternNumberDiv').style.visibility = "visible";
   document.getElementById('patternColorDiv').style.visibility = "hidden";
   document.getElementById('patternDelayDiv').style.visibility = "visible";
   document.getElementById('customPatternDiv').style.visibility = "visible";
 //  disableCustomColors(false);
 }
+function ledModeE() {
+  //// disable: patternNumber, patternColor, startColor, endColor, colorBoxes, clearAll; enable: patternDelay
+  document.getElementById('patternNumberDiv').style.visibility = "hidden";
+  document.getElementById('patternColorDiv').style.visibility = "hidden";
+  document.getElementById('patternDelayDiv').style.visibility = "visible";
+  document.getElementById('customPatternDiv').style.visibility = "hidden";
+//  disableCustomColors(true);
+}
 function enableModes() {
   if (document.getElementById('randomPattern').checked) {
-    ledModeA();
+    ledModeE();
   } else {
     switch (patternNames[document.getElementById('patternNumber').value]) {
       case "Rainbow Marquee":

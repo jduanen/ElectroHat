@@ -62,9 +62,10 @@
       <div class="vertical-center">
         Random Pattern:
         <input type="checkbox" id="randomPattern" name="randomPattern" onclick="toggleRandomPattern()">
-        <br>
-        Pattern:
-        <select id="patternNumber" name="patternNumber" onchange="setPattern()"></select>
+        <div id="patternNumberDiv">
+          Pattern:
+          <select id="patternNumber" name="patternNumber" onchange="setPattern()"></select>
+        </div>
         <div id="patternDelayDiv">
           Pattern Delay:
           <input type="range", id="patternDelay", min="1", max="1000", value="333" onchange="setPattern()"> &nbsp <span id="patDelay"></span>
