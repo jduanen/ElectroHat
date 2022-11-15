@@ -76,11 +76,10 @@
 #include <ElWires.h>
 #include <NeoPixelRing.h>
 
+#define VERBOSE                 0
 
 #define APPL_NAME               "ElectroHat"
 #define APPL_VERSION            "1.0.0"
-
-#define VERBOSE                 1
 
 #define CONFIG_PATH             "/config.json"
 
@@ -99,8 +98,6 @@
 
 #define VALID_ENTRY(doc, key)   (doc.containsKey(key) && !doc[key].isNull())
 
-#define MAX_PATTERNS            10
-
 #define STARTUP_RANDOM_PATTERN  false
 #define STARTUP_PATTERN_NUM     0
 #define STARTUP_PATTERN_DELAY   100
@@ -108,7 +105,8 @@
 #define STARTUP_CUSTOM_BIDIR    true
 #define STARTUP_CUSTOM_DELTA    64
 
-#define NUM_LEDS                LED_COUNT
+#define NUM_LEDS                16
+#define LED_BRIGHT              8
 
 
 typedef struct {
@@ -125,9 +123,9 @@ typedef struct {
     unsigned short  patternNumber;
     uint32_t        patternDelay;
     uint32_t        patternColor;
-    ColorRange      customColors[NUM_LEDS];
     bool            customBidir;
     unsigned short  customDelta;
+    ColorRange      customColors[NUM_LEDS];
 } ConfigState;
 
 ConfigState configState = {
@@ -144,6 +142,8 @@ ConfigState configState = {
     STARTUP_PATTERN_NUM,
     STARTUP_PATTERN_DELAY,
     STARTUP_PATTERN_COLOR,
+    STARTUP_CUSTOM_BIDIR,
+    STARTUP_CUSTOM_DELTA,
     {
         {0x808080, 0x808080},
         {0x808080, 0x808080},
@@ -161,16 +161,15 @@ ConfigState configState = {
         {0x808080, 0x808080},
         {0x808080, 0x808080},
         {0x808080, 0x808080}
-    },
-    STARTUP_CUSTOM_BIDIR,
-    STARTUP_CUSTOM_DELTA
+    }
 };
 
 ElWires elWires;
 
 WebServices webSvcs(APPL_NAME, WEB_SERVER_PORT);
 
-NeoPixelRing ring = NeoPixelRing();
+NeoPixelRing<NUM_LEDS> ring(LED_BRIGHT);
+
 
 char *patternNamePtrs[MAX_PATTERNS];
 uint16_t patternMinDelays[MAX_PATTERNS];
@@ -249,12 +248,14 @@ String webpageProcessor(const String& var) {
             maxDelays.concat(patternMaxDelays[i]);
         }
         return maxDelays;
+    } else if (var == "CUSTOM_DELTA") {
+        return String(configState.customDelta);
     }
     return(String());
 };
 
 String webpageMsgHandler(const JsonDocument& wsMsg) {
-    if (true) { //// TMP TMP TMP
+    if (false) { //// TMP TMP TMP
         Serial.println("MSG:");
         if (false) {
             serializeJsonPretty(wsMsg, Serial);
@@ -292,7 +293,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         configState.patternColor = ring.getColor();
         configState.customBidir = wsMsg["customBidir"];
         configState.customDelta = wsMsg["customDelta"];
-        serializeJson(wsMsg, Serial);
+//        serializeJson(wsMsg, Serial);
     } else if (msgType.equalsIgnoreCase("customColors")) {
         //// TODO think about first setting LEDs and then query them to set the configState
         json2CustomColors(configState.customColors, wsMsg["customColors"]);
@@ -357,9 +358,9 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg += ", \"patternNumber\": " + String(configState.patternNumber);
     msg += ", \"patternDelay\": " + String(configState.patternDelay);
     msg += ", \"patternColor\": " + String(configState.patternColor);
-    msg += ", \"customColors\": " + customColors2String(configState.customColors);
     msg += ", \"customBidir\": " + String(configState.customBidir);
     msg += ", \"customDelta\": " + String(configState.customDelta);
+    msg += ", \"customColors\": " + customColors2String(configState.customColors);
     if (false) {  //// TMP TMP TMP
         Serial.println(msg);
     }
@@ -404,7 +405,7 @@ void customColors2Json(JsonVariant colorRanges, ColorRange customColors[]) {
 
 void printCustomColors(ColorRange colorRanges[]) {
     Serial.print("Custom Colors: [");
-    for (int i = 0; (i < LED_COUNT); i++) {
+    for (int i = 0; (i < NUM_LEDS); i++) {
         if (i > 0) {
             Serial.print(", ");
         }
@@ -428,6 +429,11 @@ String customColors2String(ColorRange customColors[]) {
 void config() {
     bool dirty = false;
     cs.open(CONFIG_PATH);
+
+    if (false) {
+        Serial.println("Pre-config File:");
+        serializeJson(cs.configJsonDoc, Serial);
+    }
 
     if (false) {  //// TMP TMP TMP
         // disregard the contents of the saved config file
@@ -481,17 +487,17 @@ void config() {
         cs.configJsonDoc["patternColor"] = configState.patternColor;
         dirty = true;
     }
-    if (!VALID_ENTRY(cs.configJsonDoc, "customColors")) {
-        JsonArray arr = cs.configJsonDoc.createNestedArray("customColors");
-        customColors2Json(arr, configState.customColors);
-        dirty = true;
-    }
     if (!VALID_ENTRY(cs.configJsonDoc, "customBidir")) {
         cs.configJsonDoc["customBidir"] = configState.customBidir;
         dirty = true;
     }
     if (!VALID_ENTRY(cs.configJsonDoc, "customDelta")) {
         cs.configJsonDoc["customDelta"] = configState.customDelta;
+        dirty = true;
+    }
+    if (!VALID_ENTRY(cs.configJsonDoc, "customColors")) {
+        JsonArray arr = cs.configJsonDoc.createNestedArray("customColors");
+        customColors2Json(arr, configState.customColors);
         dirty = true;
     }
     if (dirty) {
@@ -509,15 +515,15 @@ void config() {
     configState.patternNumber = cs.configJsonDoc["patternNumber"].as<unsigned int>();
     configState.patternDelay = cs.configJsonDoc["patternDelay"].as<unsigned int>();
     configState.patternColor = cs.configJsonDoc["patternColor"].as<unsigned int>();
-    json2CustomColors(configState.customColors, cs.configJsonDoc["customColors"]);
     configState.customBidir = cs.configJsonDoc["customBidir"].as<bool>();
     configState.customDelta = cs.configJsonDoc["customDelta"].as<unsigned int>();
-    if (VERBOSE) {
-        println("Config File:");
+    json2CustomColors(configState.customColors, cs.configJsonDoc["customColors"]);
+    if (false) {
+        Serial.println("Config File:");
         serializeJson(cs.configJsonDoc, Serial);
         cs.listFiles("/");
         cs.printConfig();
-        println("\n");
+        Serial.println("...\n");
     }
 };
 
@@ -567,8 +573,8 @@ void initLEDs() {
     }
     ring.getPatternDelays(patternMinDelays, patternMaxDelays, MAX_PATTERNS);
     Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
-    ColorRange colorRanges[LED_COUNT] = {};
-    ring.getCustomPixels(0xFFFF, colorRanges, LED_COUNT);
+    ColorRange colorRanges[NUM_LEDS] = {};
+    ring.getCustomPixels(0xFFFF, colorRanges, NUM_LEDS);
     printCustomColors(colorRanges);
     Serial.println("Custom Pattern Bidirectional: " + String(ring.getCustomBidir()));
 
@@ -583,7 +589,7 @@ void initLEDs() {
 
 void setup() { 
     delay(500);
-    Serial.begin(19200);
+    Serial.begin(115200);
     delay(500);
     Serial.println("\nBEGIN");
 
@@ -596,7 +602,7 @@ void setup() {
     config();
 
     //// TMP TMP TMP
-    if (true) {
+    if (false) {
         Serial.println("Local Files:");
         cs.listFiles("/");
     }
