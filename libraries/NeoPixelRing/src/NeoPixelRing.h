@@ -8,27 +8,18 @@
 #include <Adafruit_NeoPixel.h>
 
 
-#define NEO_PIXEL_RING_VERSION  "1.0"
+#define NEO_PIXEL_RING_VERSION  "1.1"
 
 #define LED_PIN             15
-#define DEF_NUM_LEDS        16
+
 #define DEF_LED_BRIGHTNESS  50  // max = 255
 
 #ifndef UNUSED_ANALOG
 #define UNUSED_ANALOG       A0
 #endif /* UNUSED_ANALOG */
 
-#define PATTERN_FUNC(func)  [](NeoPixelRing* npr) {return npr->func();}
-
-class NeoPixelRing;
-using PatternFunc = void (*)(NeoPixelRing*);
-
-typedef struct {
-    PatternFunc func;
-    char        *name;
-    uint16_t    minDelay;
-    uint16_t    maxDelay;
-} Patterns;
+#define MAX_PATTERNS        6
+#define PATTERN_FUNC(func)  [](NeoPixelRing<numLeds>* npr) {return npr->func();}
 
 typedef struct {
     uint32_t startColor;
@@ -36,70 +27,91 @@ typedef struct {
 } ColorRange;
 
 
+template<uint8_t numLeds>
 class NeoPixelRing {
 public:
     String libVersion = NEO_PIXEL_RING_VERSION;
 
-    enum LED_TEST {
-        ALL_WHITE = 0,
-        ALL_RED   = 1,
-        ALL_GREEN = 2,
-        ALL_BLUE  = 3,
-        ALL_OFF   = 4,
-        ALL_BLINK = 5
-    };
-
     NeoPixelRing();
-    NeoPixelRing(byte numLeds);
-    NeoPixelRing(byte numLeds, byte brightness);
-    void test(byte test);
-    void clear();
-    unsigned long run();
+    NeoPixelRing(byte brightness);
+
     byte getNumLeds();
-    void setBrightness(byte brightness);
     byte getBrightness();
-    uint32_t makeColor(byte r, byte g, byte b);
-    void setColor(uint32_t color);
+    void setBrightness(byte brightness);
     uint32_t getColor();
-    void setDelay(uint32_t delay);
+    void setColor(uint32_t color);
     uint32_t getDelay();
+    void setDelay(uint32_t delay);
     byte getNumPatterns();
     byte getPatternNames(char *namePtrs[], byte number);
-    void getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], byte number);
     byte getSelectedPattern();
     bool selectPattern(byte patternNum);
-    bool randomPattern();
     void enableRandomPattern(bool enable);
+    bool randomPattern();
     uint32_t getEnabledCustomPixels();
-    void getCustomPixels(uint32_t pixels, ColorRange colorRanges[], int size);
-    void disableCustomPixels(uint32_t pixels);
     void enableCustomPixels(uint32_t pixels, uint32_t startColor, uint32_t endColor);
+    void disableCustomPixels(uint32_t pixels);
+    void getCustomPixels(uint32_t pixels, ColorRange colorRanges[], int size);
     uint32_t getCustomDelta();
     void setCustomDelta(uint32_t delta);
     bool getCustomBidir();
     void setCustomBidir(bool bidir);
+    void getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], byte number);
+
+    uint32_t makeColor(byte r, byte g, byte b);
     void fill(uint32_t color);
+    void clear();
+    unsigned long run();
 
 private:
-    Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+    /* compiles
+    using PatternFunc = void (*)(NeoPixelRing<numLeds>*);
+    typedef struct {
+        PatternFunc methodPtr;
+        char        *name;
+        uint16_t    minDelay;
+        uint16_t    maxDelay;
+    } Patterns;
+    typedef void (NeoPixelRing<numLeds>::*PatternFunc)();
+    typedef void (NeoPixelRing<numLeds>::*PatternFuncPtr)();
+    */
+    using PatternFuncPtr = void (*)(NeoPixelRing<numLeds>*);
+    typedef struct {
+        PatternFuncPtr  methodPtr;
+        char            *name;
+        uint16_t        minDelay;
+        uint16_t        maxDelay;
+    } Patterns;
 
-    static byte const _NUM_PATTERNS = 6;    //// FIXME
-    byte _numLeds = DEF_NUM_LEDS;
+    Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(numLeds, LED_PIN, NEO_GRB + NEO_KHZ800);
+
     byte _brightness = DEF_LED_BRIGHTNESS;
-    byte _pixelNum = 0;
     uint32_t _color = 0x000000;
     uint32_t _patternDelay = 0;
     byte _patternNum = 0;
-    unsigned long _nextRunTime = 0;
     uint32_t _firstPixelHue = 0;
+    bool _randomPattern = false;
+    byte _pixelNum = 0;
+    unsigned long _nextRunTime = 0;
     unsigned long _loopCnt = 0;
-    ColorRange _colorRanges[LED_COUNT];
     uint32_t _customPixelEnables = 0;
+    ColorRange _colorRanges[numLeds];
     int _customDelta = 64;
     bool _customBidir = false;
-    bool _randomPattern = false;
+    const uint8_t _numPatterns = MAX_PATTERNS;
+    Patterns _patterns[MAX_PATTERNS] = {
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbowMarquee), (char *)"Rainbow Marquee", 1, 300},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbow), (char *)"Rainbow", 1, 50},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorWipe), (char *)"Color Wipe", 30, 300},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorFill), (char *)"Color Fill", 0, 0},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_marquee), (char *)"Marquee", 10, 150},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_custom), (char *)"Custom", 1, 400}
+    };
 
-    void _create(byte numLeds, byte brightness);
+    void _create(byte brightness);
+
+    void _generateRandomPixel();
+    void _splitColor(byte *rPtr, byte *gPtr, byte *bPtr, uint32_t c);
 
     void _rainbowMarquee();
     void _rainbow();
@@ -107,19 +119,6 @@ private:
     void _colorFill();
     void _marquee();
     void _custom();
-
-    void _splitColor(byte *rPtr, byte *gPtr, byte *bPtr, uint32_t c);
-
-    void _generateRandomPixel();
-
-    Patterns _patterns[_NUM_PATTERNS] = {
-        {PATTERN_FUNC(_rainbowMarquee), (char *)"Rainbow Marquee", 1, 300},
-        {PATTERN_FUNC(_rainbow), (char *)"Rainbow", 1, 50},
-        {PATTERN_FUNC(_colorWipe), (char *)"Color Wipe", 30, 300},
-        {PATTERN_FUNC(_colorFill), (char *)"Color Fill", 0, 0},
-        {PATTERN_FUNC(_marquee), (char *)"Marquee", 10, 150},
-        {PATTERN_FUNC(_custom), (char *)"Custom", 1, 400}
-    };
 };
 
 #include "NeoPixelRing.hpp"
