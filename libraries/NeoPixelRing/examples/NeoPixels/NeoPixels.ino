@@ -5,30 +5,24 @@
 #include "NeoPixelRing.h"
 
 
-#define NEO_PIXEL_RING_VERSION  "1.0"
+#define VERBOSE         1
 
-#define VERBOSE             1
+#define LED_COUNT       12
 
-#define LED_PIN             15
-#define LED_COUNT           16
-#define DEF_LED_BRIGHTNESS  50  // max = 255
-
-#define COLOR_WIPE          0
-#define COLOR_FILL          1
-#define MARQUEE             2
-#define RAINBOW_MARQUEE     3
-#define RAINBOW             4
-#define CUSTOM              5
-#define NUM_PATTERNS        6
-
-#define MAX_PATTERNS        10
+#define RAINBOW_MARQUEE 0
+#define RAINBOW         1
+#define COLOR_WIPE      2
+#define COLOR_FILL      3
+#define MARQUEE         4
+#define CUSTOM          5
 
 
 uint32_t loopCnt = 0;
 
-NeoPixelRing ring = NeoPixelRing();
+NeoPixelRing<LED_COUNT> ring;
 
-char *namePtrs[MAX_PATTERNS];
+int numPatterns;
+char **namePtrs;
 
 
 void setup() {
@@ -37,7 +31,8 @@ void setup() {
     delay(500);
     Serial.println("\nBEGIN");
 
-    ring.test(NeoPixelRing::ALL_WHITE);
+    Serial.println("# of LEDs: " + String(ring.getNumLeds()));
+    ring.setColor(0xFFFFFF);  // White: all on
     delay(500);
 
     Serial.println("Delay: " + String(ring.getDelay()));
@@ -49,14 +44,15 @@ void setup() {
     Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
     ring.setColor(ring.makeColor(255, 0, 255));
     Serial.println("Selected Color: 0x" + String(ring.getColor(), HEX));
-    int num = ring.getNumPatterns();
-    Serial.println("Number of Patterns: " + String(num));
-    int numPatterns = ring.getPatternNames(namePtrs, MAX_PATTERNS);
-    if (numPatterns < 1) {
+    int numPatterns = ring.getNumPatterns();
+    Serial.println("Number of Patterns: " + String(numPatterns));
+    namePtrs = new char *[numPatterns];
+    int num = ring.getPatternNames(namePtrs, numPatterns);
+    if (num < 1) {
         Serial.println("getPatternNames failed");
     } else {
-        if (numPatterns != num) {
-            Serial.println("getPatternNames mismatch: " + String(numPatterns) + " != " + String(num));
+        if (num != numPatterns) {
+            Serial.println("getPatternNames mismatch: " + String(num) + " != " + String(numPatterns));
         }
         Serial.print("Pattern Names (" + String(numPatterns) + "): ");
         for (int i = 0; (i < numPatterns); i++) {
@@ -117,7 +113,7 @@ void loop() {
 
     if (false) {
         if ((loopCnt % 512) == 0) {
-            p = (p + 1) % NUM_PATTERNS;
+            p = (p + 1) % numPatterns;
             Serial.println("P: " + String(p) + ", Pattern: " + String(namePtrs[p]) + ", Loop: " + String(loopCnt));
             ring.clear();
             c += 1;
