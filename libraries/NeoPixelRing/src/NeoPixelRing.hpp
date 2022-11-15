@@ -263,10 +263,14 @@ void NeoPixelRing<numLeds>::_rainbow() {
 
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_colorWipe() {
+    if (_pixelNum == 0) {
+        _ring->clear();
+    }
     if (_pixelNum < numLeds) {
         _ring->setPixelColor(_pixelNum, _color);
         _ring->show();
     }
+    _nextRunTime = millis() + _patternDelay;
 };
 
 template<uint8_t numLeds>
@@ -276,6 +280,7 @@ void NeoPixelRing<numLeds>::_colorFill() {
         _ring->setPixelColor(i, _color);
     }
     _ring->show();
+    _nextRunTime = millis() + _patternDelay;
 };
 
 // Movie-marquee-like chasing rainbow lights in the selected color
