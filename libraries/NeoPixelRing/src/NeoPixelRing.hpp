@@ -152,13 +152,16 @@ void NeoPixelRing<numLeds>::setCustomBidir(bool bidir) {
 
 //// FIXME use the right kind of args to capture both dims
 template<uint8_t numLeds>
-void NeoPixelRing<numLeds>::getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], byte number) {
+void NeoPixelRing<numLeds>::getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], uint16_t defDelays[], byte number) {
     for (int i = 0; (i < min(number, _numPatterns)); i++) {
         if (minDelays != NULL) {
             minDelays[i] = _patterns[i].minDelay;
         }
         if (maxDelays != NULL) {
             maxDelays[i] = _patterns[i].maxDelay;
+        }
+        if (defDelays != NULL) {
+            defDelays[i] = _patterns[i].defDelay;
         }
     }
 };

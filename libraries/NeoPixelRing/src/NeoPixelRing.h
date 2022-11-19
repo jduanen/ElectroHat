@@ -56,7 +56,7 @@ public:
     void setCustomDelta(uint32_t delta);
     bool getCustomBidir();
     void setCustomBidir(bool bidir);
-    void getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], byte number);
+    void getPatternDelays(uint16_t minDelays[], uint16_t maxDelays[], uint16_t defDelays[], byte number);
 
     uint32_t makeColor(byte r, byte g, byte b);
     void fill(uint32_t color);
@@ -64,23 +64,13 @@ public:
     unsigned long run();
 
 private:
-    /* compiles
-    using PatternFunc = void (*)(NeoPixelRing<numLeds>*);
-    typedef struct {
-        PatternFunc methodPtr;
-        char        *name;
-        uint16_t    minDelay;
-        uint16_t    maxDelay;
-    } Patterns;
-    typedef void (NeoPixelRing<numLeds>::*PatternFunc)();
-    typedef void (NeoPixelRing<numLeds>::*PatternFuncPtr)();
-    */
     using PatternFuncPtr = void (*)(NeoPixelRing<numLeds>*);
     typedef struct {
         PatternFuncPtr  methodPtr;
         char            *name;
         uint16_t        minDelay;
         uint16_t        maxDelay;
+        uint16_t        defDelay;
     } Patterns;
 
     Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(numLeds, LED_PIN, NEO_GRB + NEO_KHZ800);
@@ -100,12 +90,12 @@ private:
     bool _customBidir = false;
     const uint8_t _numPatterns = MAX_PATTERNS;
     Patterns _patterns[MAX_PATTERNS] = {
-        {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbowMarquee), (char *)"Rainbow Marquee", 1, 300},
-        {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbow), (char *)"Rainbow", 1, 50},
-        {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorWipe), (char *)"Color Wipe", 30, 300},
-        {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorFill), (char *)"Color Fill", 0, 0},
-        {PATTERN_FUNC(NeoPixelRing<numLeds>::_marquee), (char *)"Marquee", 10, 150},
-        {PATTERN_FUNC(NeoPixelRing<numLeds>::_custom), (char *)"Custom", 1, 400}
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbowMarquee), (char *)"Rainbow Marquee", 1, 300, 64},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbow), (char *)"Rainbow", 1, 50, 8},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorWipe), (char *)"Color Wipe", 30, 300, 64},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorFill), (char *)"Color Fill", 0, 0, 0},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_marquee), (char *)"Marquee", 10, 150, 64},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_custom), (char *)"Custom", 1, 400, 32}
     };
 
     void _create(byte brightness);
