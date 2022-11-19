@@ -79,15 +79,14 @@
 #define VERBOSE                 0
 
 #define APPL_NAME               "ElectroHat"
-#define APPL_VERSION            "1.0.0"
+#define APPL_VERSION            "1.1.0"
 
-#define CONFIG_PATH             "/config.json"
+#define CONFIG_FILE_PATH        "/config.json"
+#define CS_DOC_SIZE             1024
 
 #define WIFI_AP_SSID            "ElectroHat"
  
 #define WEB_SERVER_PORT         80
-
-#define STD_WAIT                35
 
 #define STARTUP_EL_SEQUENCE     0
 #define STARTUP_EL_DELAY        100
@@ -95,8 +94,6 @@
 #define EH_HTML_PATH            "/index.html"
 #define EH_STYLE_PATH           "/style.css"
 #define EH_SCRIPTS_PATH         "/scripts.js"
-
-#define VALID_ENTRY(doc, key)   (doc.containsKey(key) && !doc[key].isNull())
 
 #define STARTUP_RANDOM_PATTERN  false
 #define STARTUP_PATTERN_NUM     0
@@ -164,9 +161,11 @@ ConfigState configState = {
     }
 };
 
-ElWires elWires;
+ConfigService cs(CS_DOC_SIZE, CONFIG_FILE_PATH);
 
 WebServices webSvcs(APPL_NAME, WEB_SERVER_PORT);
+
+ElWires elWires;
 
 NeoPixelRing<NUM_LEDS> ring(LED_BRIGHT);
 
@@ -174,6 +173,7 @@ NeoPixelRing<NUM_LEDS> ring(LED_BRIGHT);
 char *patternNamePtrs[MAX_PATTERNS];
 uint16_t patternMinDelays[MAX_PATTERNS];
 uint16_t patternMaxDelays[MAX_PATTERNS];
+uint16_t patternDefDelays[MAX_PATTERNS];
 
 unsigned int loopCnt = 0;
 
@@ -248,6 +248,15 @@ String webpageProcessor(const String& var) {
             maxDelays.concat(patternMaxDelays[i]);
         }
         return maxDelays;
+    } else if (var == "PATTERN_DEF_DELAYS") {
+        String defDelays = "";
+        for (int i = 0; (i < ring.getNumPatterns()); i++) {
+            if (i > 0) {
+                defDelays.concat(String(","));
+            }
+            defDelays.concat(patternDefDelays[i]);
+        }
+        return defDelays;
     } else if (var == "CUSTOM_DELTA") {
         return String(configState.customDelta);
     }
@@ -255,7 +264,7 @@ String webpageProcessor(const String& var) {
 };
 
 String webpageMsgHandler(const JsonDocument& wsMsg) {
-    if (false) { //// TMP TMP TMP
+    if (true) { //// TMP TMP TMP
         Serial.println("MSG:");
         if (false) {
             serializeJsonPretty(wsMsg, Serial);
@@ -293,7 +302,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         configState.patternColor = ring.getColor();
         configState.customBidir = wsMsg["customBidir"];
         configState.customDelta = wsMsg["customDelta"];
-//        serializeJson(wsMsg, Serial);
+    serializeJson(wsMsg, Serial);
     } else if (msgType.equalsIgnoreCase("customColors")) {
         //// TODO think about first setting LEDs and then query them to set the configState
         json2CustomColors(configState.customColors, wsMsg["customColors"]);
@@ -302,45 +311,54 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         ring.enableRandomPattern(wsMsg["state"]);
         configState.randomPattern = wsMsg["state"];
     } else if (msgType.equalsIgnoreCase("saveConf")) {
-        //// TODO just load from wsMsg to configState struct and then use it to load the cs.configJsonDoc -- or the converse
+        //// TODO just load from wsMsg to configState struct and then use it to load the cs.doc -- or the converse
         String ssidStr = String(wsMsg["ssid"]);
         configState.ssid = ssidStr;
-        cs.configJsonDoc["ssid"] = ssidStr;
+        SET_CONFIG(cs, "ssid", ssidStr);
         String passwdStr = String(wsMsg["passwd"]);
         configState.passwd = passwdStr;
-        cs.configJsonDoc["passwd"] = passwdStr;
+        SET_CONFIG(cs, "passwd", passwdStr);
 
         configState.elState = wsMsg["elState"];
-        cs.configJsonDoc["elState"] = wsMsg["elState"];
+        SET_CONFIG(cs, "elState", wsMsg["elState"]);
         configState.randomSequence = wsMsg["randomSequence"];
-        cs.configJsonDoc["randomSequence"] = wsMsg["randomSequence"];
+        SET_CONFIG(cs, "randomSequence", wsMsg["randomSequence"]);
         configState.sequenceNumber = wsMsg["sequenceNumber"];
-        cs.configJsonDoc["sequenceNumber"] = wsMsg["sequenceNumber"];
+        SET_CONFIG(cs, "sequenceNumber", wsMsg["sequenceNumber"]);
         configState.sequenceDelay = wsMsg["sequenceDelay"];
-        cs.configJsonDoc["sequenceDelay"] = wsMsg["sequenceDelay"];
+        SET_CONFIG(cs, "sequenceDelay", wsMsg["sequenceDelay"]);
 
         configState.ledState = wsMsg["ledState"];
-        cs.configJsonDoc["ledState"] = wsMsg["ledState"];
+        SET_CONFIG(cs, "ledState", wsMsg["ledState"]);
         configState.randomSequence = wsMsg["randomPattern"];
-        cs.configJsonDoc["randomPattern"] = wsMsg["randomPattern"];
+        SET_CONFIG(cs, "randomPattern", wsMsg["randomPattern"]);
         configState.patternNumber = wsMsg["patternNumber"];
-        cs.configJsonDoc["patternNumber"] = wsMsg["patternNumber"];
+        SET_CONFIG(cs, "patternNumber", wsMsg["patternNumber"]);
         configState.patternDelay = wsMsg["patternDelay"];
-        cs.configJsonDoc["patternDelay"] = wsMsg["patternDelay"];
+        SET_CONFIG(cs, "patternDelay", wsMsg["patternDelay"]);
         configState.patternColor = wsMsg["patternColor"];
-        cs.configJsonDoc["patternColor"] = wsMsg["patternColor"];
+        SET_CONFIG(cs, "patternColor", wsMsg["patternColor"]);
         json2CustomColors(configState.customColors, wsMsg["customColors"]);
-        cs.configJsonDoc["customColors"] = wsMsg["customColors"];
+        SET_CONFIG(cs, "customColors", wsMsg["customColors"]);
         configState.customBidir = wsMsg["customBidir"];
-        cs.configJsonDoc["customBidir"] = wsMsg["customBidir"];
+        SET_CONFIG(cs, "customBidir", wsMsg["customBidir"]);
         configState.customDelta = wsMsg["customDelta"];
-        cs.configJsonDoc["customDelta"] = wsMsg["customDelta"];
+        SET_CONFIG(cs, "customDelta", wsMsg["customDelta"]);
         if (!cs.saveConfig()) {
             Serial.println("ERROR: Failed to write config file");
+        }
+        if (true) {
+            Serial.println("Config File: XXXXXXXXXXXXXXXXXX");
+            serializeJson(*(cs.doc), Serial);
+            cs.listFiles("/");
+            cs.printConfig();
+            Serial.println("...\nXXXXXXXXXXXXXXXXX\n");
         }
     } else if (msgType.equalsIgnoreCase("reboot")) {
         println("REBOOTING...");
         reboot();
+    } else {
+        Serial.println("ERROR: unknown WS message type -- " + msgType);
     }
 
     // send contents of configState (which should reflect the state of the HW)
@@ -392,15 +410,17 @@ void json2CustomColors(ColorRange customColors[], JsonVariantConst colorRanges) 
     }
 };
 
-void customColors2Json(JsonVariant colorRanges, ColorRange customColors[]) {
+void customColors2Json(JsonArray colorRanges, ColorRange customColors[]) {
     //// TODO figure out a better way to do this
-    uint32_t cc[NUM_LEDS][2];
+    int cc[NUM_LEDS][2];
     //// TODO use foreach?
     for (int i = 0; (i < NUM_LEDS); i++) {
         cc[i][0] = customColors[i].startColor;
         cc[i][1] = customColors[i].endColor;
     }
-    copyArray(cc, colorRanges);
+    if (!copyArray(cc, colorRanges)) {
+        Serial.println("ERROR: customColors2Json copyArray failure");
+    }
 };
 
 void printCustomColors(ColorRange colorRanges[]) {
@@ -412,7 +432,7 @@ void printCustomColors(ColorRange colorRanges[]) {
         Serial.print("[0x" + String(colorRanges[i].startColor, HEX) + ", 0x" + String(colorRanges[i].endColor, HEX) + "]");
     }
     Serial.println("]");
-}
+};
 
 String customColors2String(ColorRange customColors[]) {
     String ccStr = "[";
@@ -427,76 +447,36 @@ String customColors2String(ColorRange customColors[]) {
 };
 
 void config() {
+    unsigned short  sequenceNumber;
+    unsigned short  sequenceDelay;
     bool dirty = false;
-    cs.open(CONFIG_PATH);
 
     if (false) {
         Serial.println("Pre-config File:");
-        serializeJson(cs.configJsonDoc, Serial);
+        serializeJson(*(cs.doc), Serial);
     }
 
     if (false) {  //// TMP TMP TMP
         // disregard the contents of the saved config file
-        deserializeJson(cs.configJsonDoc, "{}");
+        deserializeJson(*(cs.doc), "{}");
     }
 
-    unsigned short  sequenceNumber;
-    unsigned short  sequenceDelay;
-
-    if (!VALID_ENTRY(cs.configJsonDoc, "ssid")) {
-        cs.configJsonDoc["ssid"] = configState.ssid;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "passwd")) {
-        cs.configJsonDoc["passwd"] = configState.passwd;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "elState")) {
-        cs.configJsonDoc["elState"] = configState.elState;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "randomSequence")) {
-        cs.configJsonDoc["randomSequence"] = configState.randomSequence;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "sequenceNumber")) {
-        cs.configJsonDoc["sequenceNumber"] = configState.sequenceNumber;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "sequenceDelay")) {
-        cs.configJsonDoc["sequenceDelay"] = configState.sequenceDelay;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "ledState")) {
-        cs.configJsonDoc["ledState"] = configState.ledState;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "randomPattern")) {
-        cs.configJsonDoc["randomPattern"] = configState.randomPattern;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "patternNumber")) {
-        cs.configJsonDoc["patternNumber"] = configState.randomPattern;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "patternDelay")) {
-        cs.configJsonDoc["patternDelay"] = configState.patternDelay;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "patternColor")) {
-        cs.configJsonDoc["patternColor"] = configState.patternColor;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "customBidir")) {
-        cs.configJsonDoc["customBidir"] = configState.customBidir;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "customDelta")) {
-        cs.configJsonDoc["customDelta"] = configState.customDelta;
-        dirty = true;
-    }
-    if (!VALID_ENTRY(cs.configJsonDoc, "customColors")) {
-        JsonArray arr = cs.configJsonDoc.createNestedArray("customColors");
+    // Use values from local struct if corresponding value not found in config doc
+    INIT_CONFIG(cs, "ssid", configState.ssid);
+    INIT_CONFIG(cs, "passwd", configState.passwd);
+    INIT_CONFIG(cs, "elState", configState.elState);
+    INIT_CONFIG(cs, "randomSequence", configState.randomSequence);
+    INIT_CONFIG(cs, "sequenceNumber", configState.sequenceNumber);
+    INIT_CONFIG(cs, "sequenceDelay", configState.sequenceDelay);
+    INIT_CONFIG(cs, "ledState", configState.ledState);
+    INIT_CONFIG(cs, "randomPattern", configState.randomPattern);
+    INIT_CONFIG(cs, "patternNumber", configState.patternNumber);
+    INIT_CONFIG(cs, "patternDelay", configState.patternDelay);
+    INIT_CONFIG(cs, "patternColor", configState.patternColor);
+    INIT_CONFIG(cs, "customBidir", configState.customBidir);
+    INIT_CONFIG(cs, "customDelta", configState.customDelta);
+    if (!cs.validEntry("customColors")) {
+        JsonArray arr = (*(cs.doc)).createNestedArray("customColors");
         customColors2Json(arr, configState.customColors);
         dirty = true;
     }
@@ -504,26 +484,26 @@ void config() {
         cs.saveConfig();
     }
 
-    configState.ssid = cs.configJsonDoc["ssid"].as<String>();
-    configState.passwd = cs.configJsonDoc["passwd"].as<String>();
-    configState.elState = cs.configJsonDoc["elState"].as<bool>();
-    configState.randomSequence = cs.configJsonDoc["randomSequence"].as<bool>();
-    configState.sequenceNumber = cs.configJsonDoc["sequenceNumber"].as<unsigned int>();
-    configState.sequenceDelay = cs.configJsonDoc["sequenceDelay"].as<unsigned int>();
-    configState.ledState = cs.configJsonDoc["ledState"].as<bool>();
-    configState.randomPattern = cs.configJsonDoc["randomPattern"].as<bool>();
-    configState.patternNumber = cs.configJsonDoc["patternNumber"].as<unsigned int>();
-    configState.patternDelay = cs.configJsonDoc["patternDelay"].as<unsigned int>();
-    configState.patternColor = cs.configJsonDoc["patternColor"].as<unsigned int>();
-    configState.customBidir = cs.configJsonDoc["customBidir"].as<bool>();
-    configState.customDelta = cs.configJsonDoc["customDelta"].as<unsigned int>();
-    json2CustomColors(configState.customColors, cs.configJsonDoc["customColors"]);
+    GET_CONFIG(configState.ssid, cs, "ssid", String);
+    GET_CONFIG(configState.passwd, cs, "passwd", String);
+    GET_CONFIG(configState.elState, cs, "elState", bool);
+    GET_CONFIG(configState.randomSequence, cs, "randomSequence", bool);
+    GET_CONFIG(configState.sequenceNumber, cs, "sequenceNumber", unsigned int);
+    GET_CONFIG(configState.sequenceDelay, cs, "sequenceDelay", unsigned int);
+    GET_CONFIG(configState.ledState, cs, "ledState", bool);
+    GET_CONFIG(configState.randomPattern, cs, "randomPattern", bool);
+    GET_CONFIG(configState.patternNumber, cs, "patternNumber", unsigned int);
+    GET_CONFIG(configState.patternDelay, cs, "patternDelay", unsigned int);
+    GET_CONFIG(configState.patternColor, cs, "patternColor", unsigned int);
+    GET_CONFIG(configState.customBidir, cs, "customBidir", bool);
+    GET_CONFIG(configState.customDelta, cs, "customDelta", unsigned int);
+    json2CustomColors(configState.customColors, (*(cs.doc))["customColors"]);
     if (false) {
-        Serial.println("Config File:");
-        serializeJson(cs.configJsonDoc, Serial);
+        Serial.println("Config File: vvvvvvvvvvvvvvvvvvv");
+        serializeJson(*(cs.doc), Serial);
         cs.listFiles("/");
         cs.printConfig();
-        Serial.println("...\n");
+        Serial.println("...\n^^^^^^^^^^^^^^^^^^^^^\n");
     }
 };
 
@@ -569,9 +549,8 @@ void initLEDs() {
             }
             Serial.print(patternNamePtrs[i]);
         }
-        Serial.println(".");
     }
-    ring.getPatternDelays(patternMinDelays, patternMaxDelays, MAX_PATTERNS);
+    ring.getPatternDelays(patternMinDelays, patternMaxDelays, patternDefDelays, MAX_PATTERNS);
     Serial.println("Selected Pattern: " + String(ring.getSelectedPattern()));
     ColorRange colorRanges[NUM_LEDS] = {};
     ring.getCustomPixels(0xFFFF, colorRanges, NUM_LEDS);
@@ -599,13 +578,27 @@ void setup() {
         cs.format();
     }
 
+    //// TMP TMP TMP
+    if (true) {
+        // clear the config file
+        Serial.print("Contents of config file: ");
+        cs.printConfig();
+        Serial.println("\nWrite empty json object to config file: " + String(CONFIG_FILE_PATH));
+        deserializeJson(*(cs.doc), "{}");
+        cs.saveConfig();
+        Serial.print("Contents of empty config file: ");
+        cs.printConfig();
+        Serial.println("^^^^^^^^^^^^^^^^^^^^^^^^^");
+    }
+
     config();
 
     //// TMP TMP TMP
-    if (false) {
+    if (true) {
         Serial.println("Local Files:");
         cs.listFiles("/");
     }
+    Serial.println("Config File Contents:");
     cs.printConfig();
 
     wiFiConnect(configState.ssid, rot47(configState.passwd), WIFI_AP_SSID);
