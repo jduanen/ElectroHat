@@ -24,7 +24,7 @@ function onMessage(event) {
   var state;
   var elem;
   const msgObj = JSON.parse(event.data);
-//  console.log("msgObj: " + JSON.stringify(msgObj));
+  console.log("msgObj: " + JSON.stringify(msgObj));
 
   document.getElementById('ssid').value = msgObj.ssid;
 
@@ -169,7 +169,7 @@ function enableModes() {
 function setPattern() {
   var patNum = document.getElementById('patternNumber').value;
   var elem = document.getElementById('patternDelay');
-  var patDelay = elem.value;
+  var patDelay = patternDefDelays[patNum];
   elem.min = patternMinDelays[patNum];
   elem.max = patternMaxDelays[patNum];
   var patColor = parseInt(document.getElementById('patternColor').value.substr(1), 16);
