@@ -1,6 +1,8 @@
-/*
-* NeoPixel LED Ring library
-*/
+/***************************************************************************
+ *
+ * NeoPixel LED Ring library
+ *
+ ***************************************************************************/
 
 template<uint8_t numLeds>
 NeoPixelRing<numLeds>::NeoPixelRing() {
@@ -119,7 +121,8 @@ void NeoPixelRing<numLeds>::disableCustomPixels(uint32_t pixels) {
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::getCustomPixels(uint32_t pixels, ColorRange colorRanges[], int size) {
     int n = 0;
-    for (int i = 0; (i < 32); i++) {
+    assert(numLeds < 32);
+    for (int i = 0; (i < numLeds); i++) {
         if (pixels & (1 << i)) {
             assert(n < size);
             colorRanges[n] = _colorRanges[i];
