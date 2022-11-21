@@ -1,6 +1,8 @@
-/*
-* NeoPixel LED Ring library
-*/
+/***************************************************************************
+ *
+ * NeoPixel LED Ring library
+ *
+ ***************************************************************************/
 
 #pragma once
 
@@ -8,7 +10,7 @@
 #include <Adafruit_NeoPixel.h>
 
 
-#define NEO_PIXEL_RING_VERSION  "1.1"
+#define NEO_PIXEL_RING_VERSION  "2.0"
 
 #define LED_PIN             15
 
