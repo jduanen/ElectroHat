@@ -26,7 +26,7 @@
 *    * NodeMCU D1: SDA=GPIO4/D2/pin13; SCL=GPIO5/D1/pin14
 *  - connect to http://<ipaddr>/index.html for web interface
 *  - connect to http://<ipaddr>/update for OTA update of firmware
-*
+* 
 * TODO
 *  - ?
 *
