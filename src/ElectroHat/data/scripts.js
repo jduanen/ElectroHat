@@ -1,6 +1,5 @@
 var gateway = `ws://${window.location.hostname}/ws`;
 var websocket;
-const NUMBER_OF_LEDS = 16;
 window.addEventListener('load', onLoad);
 function initWebSocket() {
   console.log('Trying to open a WebSocket connection...');
@@ -35,11 +34,11 @@ function onMessage(event) {
     elem.value = "";
   }
 
-  var el = (msgObj.el == "true");
+  var el = msgObj.el;
   document.getElementById('elState').innerHTML = (el ? "ON" : "OFF");
   document.getElementById('el').checked = el;
 
-  var rs = (msgObj.randomSequence == "true");
+  var rs = msgObj.randomSequence;
   document.getElementById('randomSequence').checked = rs;
   document.getElementById('sequenceNumber').disabled = rs;
 
@@ -50,11 +49,11 @@ function onMessage(event) {
   elem.value = msgObj.sequenceDelay;
   document.getElementById('seqDelay').innerHTML = parseInt(msgObj.sequenceDelay);
 
-  var led = (msgObj.led == "true");
+  var led = msgObj.led;
   document.getElementById('ledState').innerHTML = (led ? "ON" : "OFF");
   document.getElementById('led').checked = led;
 
-  document.getElementById('randomPattern').checked = (msgObj.randomPattern == "true");
+  document.getElementById('randomPattern').checked = msgObj.randomPattern;
 
   elem = document.getElementById('patternNumber');
   elem.value = msgObj.patternNumber;
@@ -70,7 +69,7 @@ function onMessage(event) {
 
   setCustomColors(msgObj.customColors);
 
-  document.getElementById('customBidir').checked = (msgObj.customBidir == "true");
+  document.getElementById('customBidir').checked = msgObj.customBidir;
 
   customDelta = parseInt(msgObj.customDelta);
 
@@ -84,8 +83,8 @@ function toggleCheckbox(element) {
   websocket.send(jsonMsg);
 }
 function setSequence() {
-  var seqNum = document.getElementById('sequenceNumber').value;
-  var seqDelay = document.getElementById('sequenceDelay').value;
+  var seqNum = parseInt(document.getElementById('sequenceNumber').value);
+  var seqDelay = parseInt(document.getElementById('sequenceDelay').value);
   var jsonMsg = JSON.stringify({"msgType": "sequence", "sequenceNumber": seqNum, "sequenceDelay": seqDelay});
   websocket.send(jsonMsg);
 }
@@ -167,20 +166,22 @@ function enableModes() {
   }
 }
 function setPattern() {
-  var patNum = document.getElementById('patternNumber').value;
+  var patNum = parseInt(document.getElementById('patternNumber').value);
   var elem = document.getElementById('patternDelay');
   var patDelay = patternDefDelays[patNum];
   elem.min = patternMinDelays[patNum];
   elem.max = patternMaxDelays[patNum];
   var patColor = parseInt(document.getElementById('patternColor').value.substr(1), 16);
-  var custBidir = document.getElementById('customBidir').value;
+  var custBidir = document.getElementById('customBidir').checked;
   var jsonMsg = JSON.stringify({'msgType': 'pattern',
                                 'patternNumber': patNum,
                                 'patternDelay': patDelay,
                                 'patternColor': patColor,
                                 'customBidir': custBidir,
-                                'customDelta': customDelta
+                                'customDelta': customDelta,
+                                'customColors': getCustomColors()
                               });
+  console.log("setPattern: " + jsonMsg);
   websocket.send(jsonMsg);
   enableModes();
 }
@@ -190,18 +191,19 @@ function saveConfiguration() {
                                 'passwd': rot47(document.getElementById('password').value),
                                 'elState': document.getElementById('el').checked,
                                 'randomSequence': document.getElementById('randomSequence').checked,
-                                'sequenceNumber': document.getElementById('sequenceNumber').value,
-                                'sequenceDelay': document.getElementById('sequenceDelay').value,
+                                'sequenceNumber': parseInt(document.getElementById('sequenceNumber').value),
+                                'sequenceDelay': parseInt(document.getElementById('sequenceDelay').value),
                                 'ledState': document.getElementById('led').checked,
                                 'randomPattern': document.getElementById('randomPattern').checked,
-                                'patternNumber': document.getElementById('patternNumber').value,
-                                'patternDelay': document.getElementById('patternDelay').value,
+                                'patternNumber': parseInt(document.getElementById('patternNumber').value),
+                                'patternDelay': parseInt(document.getElementById('patternDelay').value),
                                 'patternColor': parseInt(document.getElementById('patternColor').value.substr(1), 16),
-                                'customColors': getCustomColors(),
                                 'customBidir': document.getElementById('customBidir').checked,
                                 'customDelta': customDelta
                               });
+//                                'customColors': getCustomColors()
   document.getElementById('save').disabled = true;
+  console.log("saveC: " + jsonMsg);
   websocket.send(jsonMsg);
 }
 function toggleRandomSequence() {
@@ -261,13 +263,17 @@ function colorsButtonClick(element) {
   var startColor = parseInt(document.getElementById('startColor').value.substr(1), 16);
   var endColor = parseInt(document.getElementById('endColor').value.substr(1), 16);
   element.style.background = "linear-gradient(#" + startColor.toString(16).padStart(6, 0) + ", #" + endColor.toString(16).padStart(6, 0) + ")";
-  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
-  websocket.send(jsonMsg);
+  setPattern();
+//  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
+//  websocket.send(jsonMsg);
 }
 function clearCustomColors() {
   for (var i = 0; (i < NUMBER_OF_LEDS); i++) {
     document.getElementById('cb' + i).style.background = "linear-gradient(#00ff00, #00ff00)";
   }
+//  setPattern();
+//  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
+//  websocket.send(jsonMsg);
 }
 function rgbToHex(r, g, b) {
   return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
@@ -275,7 +281,7 @@ function rgbToHex(r, g, b) {
 function rgbToInt(r, g, b) {
   return ((parseInt(r) << 16) + (parseInt(g) << 8) + parseInt(b));
 }
-function rbgIntToHex(c) {
+function rgbIntToHex(c) {
   return "#" + c.toString(16).padStart(6, 0);
 }
 function getCustomColors() {
@@ -296,7 +302,7 @@ function getCustomColors() {
 function setCustomColors(customColors) {
   for (var i = 0; (i < NUMBER_OF_LEDS); i++) {
     var elemId = 'cb' + i;
-    var bkg = "linear-gradient(" + rbgIntToHex(customColors[i][0]) + ", " + rbgIntToHex(customColors[i][1]) + ")";
+    var bkg = "linear-gradient(" + rgbIntToHex(customColors[i][0]) + ", " + rgbIntToHex(customColors[i][1]) + ")";
     document.getElementById(elemId).style.background = bkg;
   }
 }
