@@ -7,7 +7,7 @@
 
 #define VERBOSE         1
 
-#define LED_COUNT       12
+#define LED_COUNT       16
 
 #define RAINBOW_MARQUEE 0
 #define RAINBOW         1
