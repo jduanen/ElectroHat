@@ -23,7 +23,7 @@ function onMessage(event) {
   var state;
   var elem;
   const msgObj = JSON.parse(event.data);
-  console.log("msgObj: " + JSON.stringify(msgObj));
+//  console.log("msgObj: " + JSON.stringify(msgObj));
 
   document.getElementById('ssid').value = msgObj.ssid;
 
@@ -181,7 +181,7 @@ function setPattern() {
                                 'customDelta': customDelta,
                                 'customColors': getCustomColors()
                               });
-  console.log("setPattern: " + jsonMsg);
+//  console.log("setPattern: " + jsonMsg);
   websocket.send(jsonMsg);
   enableModes();
 }
@@ -203,7 +203,7 @@ function saveConfiguration() {
                               });
 //                                'customColors': getCustomColors()
   document.getElementById('save').disabled = true;
-  console.log("saveC: " + jsonMsg);
+//  console.log("saveC: " + jsonMsg);
   websocket.send(jsonMsg);
 }
 function toggleRandomSequence() {
