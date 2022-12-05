@@ -272,7 +272,7 @@ String webpageProcessor(const String& var) {
 };
 
 String webpageMsgHandler(const JsonDocument& wsMsg) {
-    if (true) { //// TMP TMP TMP
+    if (false) { //// TMP TMP TMP
         Serial.println("MSG:");
         if (false) {
             serializeJsonPretty(wsMsg, Serial);
@@ -356,7 +356,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         if (!cs.setConfig(jsonStr)) {
             Serial.println("ERROR: Failed to save config to file");
         }
-        if (true) {  //// TMP TMP TMP
+        if (false) {  //// TMP TMP TMP
             Serial.println("Config File: XXXXXXXXXXXXXXXXXX");
             cs.listFiles("/");
             cs.printConfigFile();
@@ -391,9 +391,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg.concat(", \"customDelta\": "); msg.concat(configState.customDelta);
     msg.concat(", \"customColors\": "); msg.concat(tuples2String(configState.customColors));
     if (false) {  //// TMP TMP TMP
-        Serial.println("+++++++++++++++++++++++++++");
         Serial.println(msg);
-        Serial.println("+++++++++++++++++++++++++++");
     }
     return(msg);
 };
