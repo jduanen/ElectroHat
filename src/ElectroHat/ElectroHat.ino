@@ -307,13 +307,12 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         ring.selectPattern(wsMsg["patternNumber"]);
         ring.setDelay(wsMsg["patternDelay"]);
         ring.setColor(wsMsg["patternColor"]);
-        configState.patternNumber = ring.getSelectedPattern();
-        configState.patternDelay = ring.getDelay();
-        configState.patternColor = ring.getColor();
+        configState.patternNumber = wsMsg["patternNumber"];
+        configState.patternDelay = wsMsg["patternDelay"];
+        configState.patternColor = wsMsg["patternColor"];
         configState.customBidir = wsMsg["customBidir"];
         configState.customDelta = wsMsg["customDelta"];
     } else if (msgType.equalsIgnoreCase("customColors")) {
-        //// TODO think about first setting LEDs and then query them to set the configState
         Serial.println("==>>"); printTuples("Tuples: [", configState.customColors);  //// TMP TMP TMP
         copyArray(wsMsg["customColors"], configState.customColors);
         Serial.println("<<=="); printTuples("Tuples: [", configState.customColors);  //// TMP TMP TMP
@@ -354,52 +353,6 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         jsonStr.concat("]}");
         JSON_END(jsonStr);
 
-        /*
-        //// TODO just load from wsMsg to configState struct and then use it to load the cs.doc -- or the converse
-        String ssidStr = String(wsMsg["ssid"]);
-        configState.ssid = ssidStr;
-        SET_CONFIG(cs, "ssid", ssidStr);
-        String passwdStr = String(wsMsg["passwd"]);
-        configState.passwd = passwdStr;
-        SET_CONFIG(cs, "passwd", passwdStr);
-
-        configState.elState = wsMsg["elState"];
-        SET_CONFIG(cs, "elState", wsMsg["elState"]);
-        configState.randomSequence = wsMsg["randomSequence"];
-        SET_CONFIG(cs, "randomSequence", wsMsg["randomSequence"]);
-        configState.sequenceNumber = wsMsg["sequenceNumber"];
-        SET_CONFIG(cs, "sequenceNumber", wsMsg["sequenceNumber"]);
-        configState.sequenceDelay = wsMsg["sequenceDelay"];
-        SET_CONFIG(cs, "sequenceDelay", wsMsg["sequenceDelay"]);
-
-        configState.ledState = wsMsg["ledState"];
-        SET_CONFIG(cs, "ledState", wsMsg["ledState"]);
-        configState.randomSequence = wsMsg["randomPattern"];
-        SET_CONFIG(cs, "randomPattern", wsMsg["randomPattern"]);
-        configState.patternNumber = wsMsg["patternNumber"];
-        SET_CONFIG(cs, "patternNumber", wsMsg["patternNumber"]);
-        configState.patternDelay = wsMsg["patternDelay"];
-        SET_CONFIG(cs, "patternDelay", wsMsg["patternDelay"]);
-        configState.patternColor = wsMsg["patternColor"];
-        SET_CONFIG(cs, "patternColor", wsMsg["patternColor"]);
-        configState.customBidir = wsMsg["customBidir"];
-        SET_CONFIG(cs, "customBidir", wsMsg["customBidir"]);
-        configState.customDelta = wsMsg["customDelta"];
-        SET_CONFIG(cs, "customDelta", wsMsg["customDelta"]);
-
-//        copyArray(wsMsg["customColors"], configState.customColors);
-        if (!copyArray(configState.customColors, CS_DOC(cs)["customColors"])) {
-            Serial.println("ERROR: copyArray failed in saveConf handler");
-        }
-
-        //// FIXME find a better way to do this
-        // N.B. customColors field not in this message, should already be updated
-        for (int i = 0; (i < NUM_LEDS); i++) {
-            CS_DOC(cs)["customColors"][i][0] = configState.customColors[i][0];
-            CS_DOC(cs)["customColors"][i][1] = configState.customColors[i][1];
-        }
-        */
-
         if (!cs.setConfig(jsonStr)) {
             Serial.println("ERROR: Failed to save config to file");
         }
@@ -437,7 +390,7 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
     msg.concat(", \"customBidir\": "); msg.concat(configState.customBidir);
     msg.concat(", \"customDelta\": "); msg.concat(configState.customDelta);
     msg.concat(", \"customColors\": "); msg.concat(tuples2String(configState.customColors));
-    if (true) {  //// TMP TMP TMP
+    if (false) {  //// TMP TMP TMP
         Serial.println("+++++++++++++++++++++++++++");
         Serial.println(msg);
         Serial.println("+++++++++++++++++++++++++++");
@@ -563,59 +516,14 @@ void config() {
             Serial.println("ERROR: incorrect number of customColors: " + String(numColors));
         }
     }
-    Serial.println(">> #Colors: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
-
-    /**
-    INIT_STATE(configState.ssid, cs, "ssid", String);
-    INIT_STATE(configState.passwd, cs, "passwd", String);
-    INIT_STATE(configState.elState, cs, "elState", bool);
-    INIT_STATE(configState.randomSequence, cs, "randomSequence", bool);
-    INIT_STATE(configState.sequenceNumber, cs, "sequenceNumber", uint16_t);
-    INIT_STATE(configState.sequenceDelay, cs, "sequenceDelay", uint32_t);
-    INIT_STATE(configState.ledState, cs, "ledState", bool);
-    INIT_STATE(configState.randomPattern, cs, "randomPattern", bool);
-    INIT_STATE(configState.patternNumber, cs, "patternNumber", uint16_t);
-    INIT_STATE(configState.patternDelay, cs, "patternDelay", uint32_t);
-    INIT_STATE(configState.patternColor, cs, "patternColor", uint32_t);
-    INIT_STATE(configState.customBidir, cs, "customBidir", bool);
-    INIT_STATE(configState.customDelta, cs, "customDelta", uint16_t);
-    uint16_t numElems = CS_DOC(cs)["customColors"].size();
-
     //// TMP TMP TMP
-    Serial.println(">> ArraySize: " + String(numElems) + ", OVFL: " + String(cs.doc->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
-    if (numElems != NUM_LEDS) {
-
-        CS_DOC(cs)["customColors"].clear();
-        CS_DOC(cs).createNestedArray("customColors");
-        if (!copyArray(configState.customColors, CS_DOC(cs)["customColors"])) {
-            Serial.println("ERROR: copyArray failed in config");
-        }
-
-        for (int i = NUM_LEDS; (i < numElems); i++) {
-            CS_DOC(cs)["customColors"].remove(i);
-
-            CS_DOC(cs)["customColors"][i].clear();
-            CS_DOC(cs)["customColors"][numElems][0] = 0;
-            CS_DOC(cs)["customColors"][numElems][1] = 0;
-
-        }
-
-        Serial.println("CS Mem:: " + String(CS_DOC(cs).memoryUsage()));
-        cs.doc->garbageCollect();
-        Serial.println("CS Mem:: " + String(CS_DOC(cs).memoryUsage()));
-        cs.doc->shrinkToFit();
-        Serial.println("CS Mem::: " + String(CS_DOC(cs).memoryUsage()));
-
-        numElems = NUM_LEDS;
-    }
-    **/
+    Serial.println(">> #Colors: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
     //// TMP TMP TMP
     Serial.println(">>>> ArraySize: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
     if (cs.validEntry("customColors") && !cs.docPtr->overflowed() && (numColors == NUM_LEDS)) {
         Serial.println("USING CUSTOM COLORS FROM CONFIG FILE");
         copyArray(CS_DOC(cs)["customColors"], configState.customColors);
     }
-
     //// TMP TMP TMP
     printConfigState(&configState);
 };
