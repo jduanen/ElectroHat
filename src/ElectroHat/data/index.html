@@ -160,7 +160,6 @@
         console.log("WARNING: invalid WIFI mode -- " + wifiMode);
     }
     positionCustomColorButtons();
-    clearCustomColors();
 
     var jsonMsg = JSON.stringify({"msgType": "query"});
     websocket.send(jsonMsg);
