@@ -168,7 +168,7 @@ function enableModes() {
 function setPattern() {
   var patNum = parseInt(document.getElementById('patternNumber').value);
   var elem = document.getElementById('patternDelay');
-  var patDelay = patternDefDelays[patNum];
+  var patDelay = elem.value;
   elem.min = patternMinDelays[patNum];
   elem.max = patternMaxDelays[patNum];
   var patColor = parseInt(document.getElementById('patternColor').value.substr(1), 16);
@@ -263,17 +263,17 @@ function colorsButtonClick(element) {
   var startColor = parseInt(document.getElementById('startColor').value.substr(1), 16);
   var endColor = parseInt(document.getElementById('endColor').value.substr(1), 16);
   element.style.background = "linear-gradient(#" + startColor.toString(16).padStart(6, 0) + ", #" + endColor.toString(16).padStart(6, 0) + ")";
-  setPattern();
-//  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
-//  websocket.send(jsonMsg);
+//  setPattern();
+  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
+  websocket.send(jsonMsg);
 }
 function clearCustomColors() {
   for (var i = 0; (i < NUMBER_OF_LEDS); i++) {
     document.getElementById('cb' + i).style.background = "linear-gradient(#00ff00, #00ff00)";
   }
 //  setPattern();
-//  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
-//  websocket.send(jsonMsg);
+  var jsonMsg = JSON.stringify({'msgType': 'customColors', 'customColors': getCustomColors()});
+  websocket.send(jsonMsg);
 }
 function rgbToHex(r, g, b) {
   return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
