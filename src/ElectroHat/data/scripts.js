@@ -154,6 +154,9 @@ function enableModes() {
       case "Color Fill":
         ledModeB();
         break;
+      case "Comet":
+        ledModeC();
+        break;
       case "Marquee":
         ledModeC();
         break;
