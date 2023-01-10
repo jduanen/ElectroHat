@@ -16,7 +16,7 @@
 
 // ASSERT: 0 < NUM_COMETS < (NUM_COMETS * COMET_LENGTH)
 // ASSERT: (NUM_COMETS * COMET_LENGTH) <= NUM_LEDS)
-#define COMET_LENGTH        5
+#define COMET_LENGTH        4
 #define NUM_COMETS          3
 
 #define DECAY_MULTIPLIER    1
