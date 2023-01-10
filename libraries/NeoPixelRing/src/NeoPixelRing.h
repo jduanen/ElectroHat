@@ -20,8 +20,9 @@
 #define UNUSED_ANALOG       A0
 #endif /* UNUSED_ANALOG */
 
-#define MAX_PATTERNS        6
+#define MAX_PATTERNS        7
 #define PATTERN_FUNC(func)  [](NeoPixelRing<numLeds>* npr) {return npr->func();}
+
 
 typedef struct {
     uint32_t startColor;
@@ -96,6 +97,7 @@ private:
         {PATTERN_FUNC(NeoPixelRing<numLeds>::_rainbow), (char *)"Rainbow", 1, 50, 8},
         {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorWipe), (char *)"Color Wipe", 30, 300, 64},
         {PATTERN_FUNC(NeoPixelRing<numLeds>::_colorFill), (char *)"Color Fill", 0, 0, 0},
+        {PATTERN_FUNC(NeoPixelRing<numLeds>::_comet), (char *)"Comet", 25, 150, 64},
         {PATTERN_FUNC(NeoPixelRing<numLeds>::_marquee), (char *)"Marquee", 10, 150, 64},
         {PATTERN_FUNC(NeoPixelRing<numLeds>::_custom), (char *)"Custom", 1, 400, 32}
     };
@@ -109,6 +111,7 @@ private:
     void _rainbow();
     void _colorWipe();
     void _colorFill();
+    void _comet();
     void _marquee();
     void _custom();
 };

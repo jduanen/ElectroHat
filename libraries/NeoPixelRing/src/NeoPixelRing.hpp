@@ -4,6 +4,29 @@
  *
  ***************************************************************************/
 
+#define LED_FUDGE_FACTOR    10  // let things be up to 10msec late without complaining
+
+#define GET_RED(c)          ((c >> 16) & 0xFF)
+#define GET_GREEN(c)        ((c >> 8) & 0xFF)
+#define GET_BLUE(c)         (c & 0xFF)
+
+#define RED_COMP            0x00FF0000
+#define GREEN_COMP          0x0000FF00
+#define BLUE_COMP           0x000000FF
+
+// ASSERT: 0 < NUM_COMETS < (NUM_COMETS * COMET_LENGTH)
+// ASSERT: (NUM_COMETS * COMET_LENGTH) <= NUM_LEDS)
+#define COMET_LENGTH        5
+#define NUM_COMETS          3
+
+#define DECAY_MULTIPLIER    1
+#define DECAY_RED(i, c)     (((c & RED_COMP) >> (i * DECAY_MULTIPLIER)) & RED_COMP)
+#define DECAY_GREEN(i, c)   (((c & GREEN_COMP) >> (i * DECAY_MULTIPLIER)) & GREEN_COMP)
+#define DECAY_BLUE(i, c)    (((c & BLUE_COMP)>> (i * DECAY_MULTIPLIER)) & BLUE_COMP)
+
+#define DECAY_COLOR(i, c)   (DECAY_RED(i, c) | DECAY_GREEN(i, c) | DECAY_BLUE(i, c))
+
+
 template<uint8_t numLeds>
 NeoPixelRing<numLeds>::NeoPixelRing() {
     _create(DEF_LED_BRIGHTNESS);
@@ -188,8 +211,6 @@ void NeoPixelRing<numLeds>::clear() {
     _ring->show();
 };
 
-#define LED_FUDGE_FACTOR        10  // let things be up to 10msec late without complaining
-
 template<uint8_t numLeds>
 unsigned long NeoPixelRing<numLeds>::run() {
     unsigned long now = millis();
@@ -234,9 +255,9 @@ void NeoPixelRing<numLeds>::_generateRandomPixel() {
 
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_splitColor(byte *rPtr, byte *gPtr, byte *bPtr, uint32_t c) {
-    *rPtr = ((c >> 16) & 0xFF);
-    *gPtr = ((c >> 8) & 0xFF);
-    *bPtr = (c & 0xFF);
+    *rPtr = GET_RED(c);
+    *gPtr = GET_GREEN(c);
+    *bPtr = GET_RED(c);
 };
 
 // Movie-marquee-like chasing rainbow lights that precess
@@ -289,12 +310,31 @@ void NeoPixelRing<numLeds>::_colorFill() {
     _nextRunTime = millis() + _patternDelay;
 };
 
+template<uint8_t numLeds>
+void NeoPixelRing<numLeds>::_comet() {
+    // each comet starts with an LED of the selected brightness and COMET_LENGTH LEDs with decreasing brightness
+    // brightness of comet tail is exponentially decreasing from the starting pixel component values
+    uint32_t c;
+    _ring->clear();
+    int cometSpan = numLeds / NUM_COMETS;
+    for (int i = 0; (i < numLeds); i++) {
+        int j = (cometSpan - (i % cometSpan)) - 1;
+        if (j >= COMET_LENGTH) {
+            c = 0x0000000;
+        } else {
+            c = DECAY_COLOR(j, _color);
+        }
+        _ring->setPixelColor(((i + _pixelNum) % numLeds), c);
+    }
+    _ring->show();
+    _nextRunTime = millis() + _patternDelay;
+};
+
 // Movie-marquee-like chasing rainbow lights in the selected color
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_marquee() {
     _ring->clear();
-    int n = numLeds;
-    for (int i = (_loopCnt % 3); (i < n); i += 3) {
+    for (int i = (_loopCnt % 3); (i < numLeds); i += 3) {
         _ring->setPixelColor(i, _color);
         _ring->show();
     }
