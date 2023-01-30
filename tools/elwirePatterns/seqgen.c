@@ -36,7 +36,7 @@ int main() {
             for (int wireNum = 0; (wireNum < NUM_EL_WIRES); wireNum++) {
                 bits = (bits << 1) | (sequences[seqNum][patNum][wireNum] != ' ');
             }
-            patterns[indx++] = bits;
+            patterns[indx++] = ~bits;
         }
         sequenceDefinitions[seqNum].length = patNum;
     }
