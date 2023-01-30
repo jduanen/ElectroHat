@@ -8,8 +8,8 @@
 
 #define SEQUENCES_VERSION   "1.0.0"
 
-#define NUM_EL_WIRES            8
-#define MAX_SEQUENCES           128
+#define NUM_EL_WIRES        8
+#define MAX_SEQUENCES       128
 
 #include "seqdefs.h"
 
@@ -68,6 +68,6 @@ int main() {
     }
     printf("};\n");
 
-    printf("#endif /*FONTS_H*/\n");
+    printf("#endif /*SEQUENCES_H*/\n");
     return 0;
 }
