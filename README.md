@@ -13,6 +13,9 @@ Consists of two major components -- the Hat and the Goggles -- each of which can
 
 The Hat lights up the wires wrapping the cones in definable patterns and rates.
 
+![ElectroHat](eh.png)
+![ElectroHat](electrohat.gif)
+
 The Hat consists of:
   * four cones (each of which is wrapped in a pair of colored EL wires)
     - using laser-cut acrylic bars with regular indentations that the wires snap into
@@ -35,6 +38,10 @@ The Hat consists of:
 ## Googles
 
 The Googles display animated eyes that can be ?
+
+![Goggles1](eyes1.gif)
+![Goggles2](eyes2.gif)
+
 
 The Goggles consist of:
   * (steampunk-like) googles (with hemispherical lenses and masks)
