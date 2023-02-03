@@ -494,12 +494,10 @@ void config() {
     configState.customDelta = cs.getConfigValue<uint16_t>("customDelta", configState.customDelta);
 
     uint16_t numColors = (*(cs.docPtr))["customColors"].size();
-    Serial.println("> #Colors: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
     if (!cs.validEntry("customColors")) {
         cs.docPtr->createNestedArray("customColors");
         numColors = 0;
     }
-    Serial.println(">> #Colors: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
     if (numColors != NUM_LEDS) {
         Serial.println("ERROR: wrong number of customColors");
         //// FIXME
@@ -514,10 +512,6 @@ void config() {
             Serial.println("ERROR: incorrect number of customColors: " + String(numColors));
         }
     }
-    //// TMP TMP TMP
-    Serial.println(">> #Colors: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
-    //// TMP TMP TMP
-    Serial.println(">>>> ArraySize: " + String(numColors) + ", OVFL: " + String(cs.docPtr->overflowed()) + ", VALID: " + cs.validEntry("customColors"));
     if (cs.validEntry("customColors") && !cs.docPtr->overflowed() && (numColors == NUM_LEDS)) {
         Serial.println("USING CUSTOM COLORS FROM CONFIG FILE");
         copyArray(CS_DOC(cs)["customColors"], configState.customColors);
@@ -534,6 +528,41 @@ void initElWires() {
     println("Random Sequence Enabled: " + String(elWires.randomSequence() ? "Yes" : "No"));
     println("Sequence Number: " + String(elWires.sequenceNumber()));
     println("Sequence Delay: " + String(elWires.sequenceDelay()));
+};
+
+#define BLINK_IPA_REPEAT                1
+#define BLINK_IPA_REPEAT_DELAY          500   // 500ms
+#define BLINK_IPA_INTER_BYTE_DELAY      5000  // 5s
+
+void lightLEDs(uint32_t color, uint16_t enables) {
+    for (int i = 0; (i < 16); i++) {
+        if ((enables >> i) & 1) {
+            ring.ring->setPixelColor(i, color);
+            ring.ring->show();
+        }
+    }
+}
+
+void blinkIPA(IPAddress ipAddr) {
+    uint32_t colors[4] = {
+        ring.makeColor(255, 0,   0),    // Red
+        ring.makeColor(0,   255, 0),    // Green
+        ring.makeColor(0,   0, 255),    // Blue
+        ring.makeColor(255, 0, 255)     // Magenta
+    };
+
+    ring.clear();
+    for (int i = 0; (i < BLINK_IPA_REPEAT); i++) {
+        for (int n = 0; (n < 4); n++) {
+            lightLEDs(ring.makeColor(255, 255, 255), 0xF00F);
+            lightLEDs(ring.makeColor(0, 0, 0), 0x0FF0);
+            uint16_t enbs = ((ipAddr[n] << 4) & 0x0FF0);
+            lightLEDs(colors[n], enbs);
+            delay(BLINK_IPA_INTER_BYTE_DELAY);
+        }
+        delay(BLINK_IPA_REPEAT_DELAY);
+    }
+    ring.clear();
 };
 
 void initLEDs() {
@@ -575,13 +604,17 @@ void initLEDs() {
     ring.getCustomPixels(0xFFFF, colorRanges, NUM_LEDS);
     Serial.println("Custom Pattern Bidirectional: " + String(ring.getCustomBidir()));
 
+    // test all colors/leds work
     ring.fill(ring.makeColor(255, 0, 0));  // RED = all sub-pixels on
-    delay(500);
+    delay(200);
     ring.fill(ring.makeColor(0, 255, 0));  // GREEN = all sub-pixels on
-    delay(500);
+    delay(200);
     ring.fill(ring.makeColor(0, 0, 255));  // BLUE = all sub-pixels on
-    delay(500);
+    delay(200);
     ring.clear();
+
+    // blink the IPAddress
+    blinkIPA(WiFi.localIP());
 }
 
 void setup() { 
