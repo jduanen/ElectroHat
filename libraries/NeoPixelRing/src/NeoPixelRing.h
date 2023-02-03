@@ -35,6 +35,8 @@ class NeoPixelRing {
 public:
     String libVersion = NEO_PIXEL_RING_VERSION;
 
+    Adafruit_NeoPixel *ring = new Adafruit_NeoPixel(numLeds, LED_PIN, NEO_GRB + NEO_KHZ800);
+
     NeoPixelRing();
     NeoPixelRing(byte brightness);
 
@@ -75,8 +77,6 @@ private:
         uint16_t        maxDelay;
         uint16_t        defDelay;
     } Patterns;
-
-    Adafruit_NeoPixel *_ring = new Adafruit_NeoPixel(numLeds, LED_PIN, NEO_GRB + NEO_KHZ800);
 
     byte _brightness = DEF_LED_BRIGHTNESS;
     uint32_t _color = 0x000000;

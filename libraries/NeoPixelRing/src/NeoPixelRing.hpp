@@ -50,7 +50,7 @@ byte NeoPixelRing<numLeds>::getBrightness() {
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::setBrightness(byte brightness) {
     _brightness = brightness;
-    _ring->setBrightness(brightness);
+    ring->setBrightness(brightness);
 };
 
 template<uint8_t numLeds>
@@ -194,21 +194,21 @@ void NeoPixelRing<numLeds>::getPatternDelays(uint16_t minDelays[], uint16_t maxD
 
 template<uint8_t numLeds>
 uint32_t NeoPixelRing<numLeds>::makeColor(byte r, byte g, byte b) {
-    return _ring->Color(r, g, b);
+    return ring->Color(r, g, b);
 };
 
 // Fill all pixels with the selected color
 // Doesn't clear the pixels first.
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::fill(uint32_t color) {
-    _ring->fill(color, 0, numLeds);
-    _ring->show();
+    ring->fill(color, 0, numLeds);
+    ring->show();
 };
 
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::clear() {
-    _ring->clear();
-    _ring->show();
+    ring->clear();
+    ring->show();
 };
 
 template<uint8_t numLeds>
@@ -233,13 +233,13 @@ unsigned long NeoPixelRing<numLeds>::run() {
 
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_create(byte brightness) {
-    assert((_ring->numPixels() <= 32) && (numLeds <= 32) && (numLeds <= _ring->numPixels()));
+    assert((ring->numPixels() <= 32) && (numLeds <= 32) && (numLeds <= ring->numPixels()));
     _brightness = brightness;
-    _ring->begin();
-    _ring->clear();
-    _ring->show();  // turn off all pixels
-    _ring->setBrightness(brightness);
-    _ring->setPixelColor(1, 255, 0, 255);
+    ring->begin();
+    ring->clear();
+    ring->show();  // turn off all pixels
+    ring->setBrightness(brightness);
+    ring->setPixelColor(1, 255, 0, 255);
 
     // use floating input as source of randomness
     randomSeed(analogRead(UNUSED_ANALOG));
@@ -247,9 +247,9 @@ void NeoPixelRing<numLeds>::_create(byte brightness) {
 
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_generateRandomPixel() {
-    _ring->setPixelColor(random(0, numLeds),
+    ring->setPixelColor(random(0, numLeds),
                          random(0, 0xFF), random(0, 0xFF), random(0, 0xFF));
-    _ring->show();
+    ring->show();
     _nextRunTime = millis() + _patternDelay;
 }
 
@@ -264,14 +264,14 @@ void NeoPixelRing<numLeds>::_splitColor(byte *rPtr, byte *gPtr, byte *bPtr, uint
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_rainbowMarquee() {
     _nextRunTime = millis() + _patternDelay;
-    _ring->clear();
+    ring->clear();
     int n = numLeds;
     for (int i = (_loopCnt % 3); (i < n); i += 3) {
         int hue = _firstPixelHue + i * 65536L / n;
-        uint32_t rgbColor = _ring->gamma32(_ring->ColorHSV(hue));
+        uint32_t rgbColor = ring->gamma32(ring->ColorHSV(hue));
 //        Serial.println("> " + String(i) + ", 0x" + String(rgbColor, HEX));
-        _ring->setPixelColor(i, rgbColor);
-        _ring->show();
+        ring->setPixelColor(i, rgbColor);
+        ring->show();
     }
     _firstPixelHue += 256;
 };
@@ -281,9 +281,9 @@ void NeoPixelRing<numLeds>::_rainbowMarquee() {
 //  by 256 each iteration.
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_rainbow() {
-    _ring->clear();
-    _ring->rainbow(_firstPixelHue);
-    _ring->show();
+    ring->clear();
+    ring->rainbow(_firstPixelHue);
+    ring->show();
     _firstPixelHue += 256;
     _nextRunTime = millis() + _patternDelay;
 };
@@ -291,22 +291,22 @@ void NeoPixelRing<numLeds>::_rainbow() {
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_colorWipe() {
     if (_pixelNum == 0) {
-        _ring->clear();
+        ring->clear();
     }
     if (_pixelNum < numLeds) {
-        _ring->setPixelColor(_pixelNum, _color);
-        _ring->show();
+        ring->setPixelColor(_pixelNum, _color);
+        ring->show();
     }
     _nextRunTime = millis() + _patternDelay;
 };
 
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_colorFill() {
-    _ring->clear();
+    ring->clear();
     for (int i = 0; (i < numLeds); i++) {
-        _ring->setPixelColor(i, _color);
+        ring->setPixelColor(i, _color);
     }
-    _ring->show();
+    ring->show();
     _nextRunTime = millis() + _patternDelay;
 };
 
@@ -315,7 +315,7 @@ void NeoPixelRing<numLeds>::_comet() {
     // each comet starts with an LED of the selected brightness and COMET_LENGTH LEDs with decreasing brightness
     // brightness of comet tail is exponentially decreasing from the starting pixel component values
     uint32_t c;
-    _ring->clear();
+    ring->clear();
     int cometSpan = numLeds / NUM_COMETS;
     for (int i = 0; (i < numLeds); i++) {
         int j = (cometSpan - (i % cometSpan)) - 1;
@@ -324,19 +324,19 @@ void NeoPixelRing<numLeds>::_comet() {
         } else {
             c = DECAY_COLOR(j, _color);
         }
-        _ring->setPixelColor(((i + _pixelNum) % numLeds), c);
+        ring->setPixelColor(((i + _pixelNum) % numLeds), c);
     }
-    _ring->show();
+    ring->show();
     _nextRunTime = millis() + _patternDelay;
 };
 
 // Movie-marquee-like chasing rainbow lights in the selected color
 template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_marquee() {
-    _ring->clear();
+    ring->clear();
     for (int i = (_loopCnt % 3); (i < numLeds); i += 3) {
-        _ring->setPixelColor(i, _color);
-        _ring->show();
+        ring->setPixelColor(i, _color);
+        ring->show();
     }
     _firstPixelHue += 256;
     _nextRunTime = millis() + _patternDelay;
@@ -347,7 +347,7 @@ template<uint8_t numLeds>
 void NeoPixelRing<numLeds>::_custom() {
     int incr;
     byte sR, sG, sB, eR, eG, eB, r, g, b;
-    _ring->clear();
+    ring->clear();
     for (int i = 0; (i < 32); i++) {
         if ((_customPixelEnables & (1 << i)) != 0) {
             _splitColor(&sR, &sG, &sB, _colorRanges[i].startColor);
@@ -363,9 +363,9 @@ void NeoPixelRing<numLeds>::_custom() {
             r = sR + (((eR - sR) * incr) / _customDelta);
             g = sG + (((eG - sG) * incr) / _customDelta);
             b = sB + (((eB - sB) * incr) / _customDelta);
-            _ring->setPixelColor(i, r, g, b);
+            ring->setPixelColor(i, r, g, b);
         }
     }
-    _ring->show();
+    ring->show();
     _nextRunTime = millis() + _patternDelay;
 };
