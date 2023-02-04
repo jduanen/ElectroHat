@@ -313,9 +313,9 @@ String webpageMsgHandler(const JsonDocument& wsMsg) {
         configState.customBidir = wsMsg["customBidir"];
         configState.customDelta = wsMsg["customDelta"];
     } else if (msgType.equalsIgnoreCase("customColors")) {
-        Serial.println("==>>"); printTuples("Tuples: [", configState.customColors);  //// TMP TMP TMP
+//        Serial.println("==>>"); printTuples("Tuples: [", configState.customColors);  //// TMP TMP TMP
         copyArray(wsMsg["customColors"], configState.customColors);
-        Serial.println("<<=="); printTuples("Tuples: [", configState.customColors);  //// TMP TMP TMP
+//        Serial.println("<<=="); printTuples("Tuples: [", configState.customColors);  //// TMP TMP TMP
         updateCustomColorLeds(configState.customColors);
     } else if (msgType.equalsIgnoreCase("randomPattern")) {
         ring.enableRandomPattern(wsMsg["state"]);
