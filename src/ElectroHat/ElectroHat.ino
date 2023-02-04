@@ -83,7 +83,7 @@
 #define VERBOSE                 0
 
 #define APPL_NAME               "ElectroHat"
-#define APPL_VERSION            "1.2.0"
+#define APPL_VERSION            "1.2.1"
 
 #define CONFIG_FILE_PATH        "/config.json"
 #define CS_DOC_SIZE             1536
