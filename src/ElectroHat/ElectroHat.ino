@@ -83,7 +83,7 @@
 #define VERBOSE                 0
 
 #define APPL_NAME               "ElectroHat"
-#define APPL_VERSION            "1.2.1"
+#define APPL_VERSION            "1.2.2"
 
 #define CONFIG_FILE_PATH        "/config.json"
 #define CS_DOC_SIZE             1536
@@ -552,9 +552,23 @@ void blinkIPA(IPAddress ipAddr) {
     };
 
     ring.clear();
+    WiFiMode_t wifiMode = WiFi.getMode();
     for (int i = 0; (i < BLINK_IPA_REPEAT); i++) {
         for (int n = 0; (n < 4); n++) {
-            lightLEDs(ring.makeColor(255, 255, 255), 0xF00F);
+            switch (wifiMode) {
+            case WIFI_OFF:
+                lightLEDs(ring.makeColor(0, 0, 0), 0xF00F);        // Off: black
+                break;
+            case WIFI_STA:
+                lightLEDs(ring.makeColor(128, 128, 128), 0xF00F);    // Station: gray
+                break;
+            case WIFI_AP:
+                lightLEDs(ring.makeColor(0, 128, 128), 0xF00F);  // Access Point: cyan
+                break;
+            case WIFI_AP_STA:
+                lightLEDs(ring.makeColor(128, 128, 0), 0xF00F);    // Both AP and Station: yellow
+                break;
+            }
             lightLEDs(ring.makeColor(0, 0, 0), 0x0FF0);
             uint16_t enbs = ((ipAddr[n] << 4) & 0x0FF0);
             lightLEDs(colors[n], enbs);
