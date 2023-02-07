@@ -11,7 +11,12 @@
 #define NUM_EL_WIRES        8
 #define MAX_SEQUENCES       128
 
+#define NUM_BITS            8
+
 #include "seqdefs.h"
+
+
+unsigned char BITS_MAPPING[NUM_BITS] = {0, 1, 2, 4, 3, 5, 6, 7};
 
 typedef struct {
     unsigned short  offset;
@@ -22,6 +27,14 @@ typedef struct {
 SequenceDefinition sequenceDefinitions[MAX_SEQUENCES];
 unsigned char patterns[NUM_SEQUENCES * MAX_SEQUENCE_LENGTH];
 
+
+unsigned char mapBits(unsigned char bits) {
+    unsigned char mappedBits = 0;
+    for (int i = 0; (i < NUM_BITS); i++) {
+        mappedBits = (mappedBits << 1) | ((bits >> BITS_MAPPING[(NUM_BITS - 1) - i]) & 1);
+    }
+    return mappedBits;
+}
 
 int main() {
     int patNum;
@@ -36,7 +49,7 @@ int main() {
             for (int wireNum = 0; (wireNum < NUM_EL_WIRES); wireNum++) {
                 bits = (bits << 1) | (sequences[seqNum][patNum][wireNum] != ' ');
             }
-            patterns[indx++] = ~bits;
+            patterns[indx++] = mapBits(~bits);
         }
         sequenceDefinitions[seqNum].length = patNum;
     }
