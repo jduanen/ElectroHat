@@ -6,7 +6,7 @@
 #include <assert.h>
 
 
-#define SEQUENCES_VERSION   "1.0.0"
+#define SEQUENCES_VERSION   "1.1.0"
 
 #define NUM_EL_WIRES        8
 #define MAX_SEQUENCES       128
